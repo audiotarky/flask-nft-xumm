@@ -36,3 +36,9 @@ python db_setup.py
 ```
 
 and will make a file called `xumm.db` in the root of the app.
+
+## Running the app
+
+```
+python app.py
+```

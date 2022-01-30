@@ -1,0 +1,134 @@
+/* =========================== SIDEBAR =========================== */
+.sidebar {
+    width: 250px;
+    height: 100%;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background-color: #F2F2F2;
+    padding: 0px 20px;
+}
+
+    .sidebar__logo svg {
+        width: 50px;
+        height: 50px;
+        position: absolute;
+        left: 20px;
+        top: 10px;
+    }
+
+    .sidebar h2 {
+        margin-bottom: 40px;
+        font: normal normal 600 32px/27px canada-type-gibson;
+        letter-spacing: 0.8px;
+        color: #2B3638;
+    }
+
+    .sidebar__nav {
+        padding-top: 150px;
+    }
+
+    .sidebar__nav ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+
+    .sidebar__nav li {
+        margin: 10px 0px;
+        text-align: left;
+        font: normal normal normal 20px/38px mentone;
+        letter-spacing: 0px;
+        color: #2B3638;
+    }
+
+    .sidebar__nav hr {
+        margin-top: 0px;
+    }
+
+    .sidebar__nav a {
+        text-decoration: none;
+        color: black;
+    }
+
+    @media only screen and (max-width: 799px) {
+        .sidebar {
+            width: 110px;
+        }
+
+        .sidebar h2 {
+            font-size: 24px;
+        }
+
+        .sidebar__nav li {
+            font-size: 18px;
+        }
+    }
+
+    @media only screen and (max-width: 599px) {
+        .sidebar {
+            position: relative;
+            width: 100%;
+            height: 70px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            padding: 0;
+        }
+
+        .sidebar__logo svg {
+            width: 35px;
+            height: 35px;
+            position: unset;
+            margin: 20px;
+        }
+
+        .sidebar h2 {
+            display: none;
+        }
+
+        .sidebar__nav {
+            padding: 0;
+            padding-left: 20px;
+            height: 100%;
+        }
+
+        nav {
+            height: 100%;
+        }
+
+        .sidebar__nav ul {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            height: 100%;
+        }
+
+        .sidebar hr {
+            display: none;
+        }
+
+        .sidebar__nav li {
+            margin-right: 20px;
+            font-size: 16px;
+        }
+
+    }
+
+
+
+
+/* =========================== SIGN OUT =========================== */
+.sign-out-link {
+    position: absolute;
+    right: 20px;
+    top: 25px;
+}
+
+@media only screen and (max-width: 599px) {
+    .sign-out-link {
+        top: 80px;
+        right: 10px;
+        font-size: 16px;
+    }
+}

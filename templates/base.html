@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/css-reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/artist-profile.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/sidebar.css') }}">
+    <link rel="stylesheet" href="https://use.typekit.net/hjd5gfr.css" async>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>Artist Admin</title>
+</head>
+<body>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar__logo">
+            <a href="https://audiotarky.com">
+                <svg xmlns="http://www.w3.org/2000/svg" width="101.07" height="84.69" viewBox="0 0 101.07 84.69">
+                    <g id="Group_365" data-name="Group 365" transform="translate(0 0)">
+                    <path id="Path_276" data-name="Path 276" d="M9.019,51.632,0,61.958l19.856,20.68,25.9-31.006Z" transform="translate(0 -0.831)" fill="#ff768f"/>
+                    <path id="Path_277" data-name="Path 277" d="M25.782,85.485H83.1L55.078,50.409Z" transform="translate(-1.576 -0.795)" fill="#f8c63d"/>
+                    <path id="Path_278" data-name="Path 278" d="M53.676,0,37.867,17.781,88.254,81.374l15.414-18.282Z" transform="translate(-2.597)" fill="#373737"/>
+                    </g>
+                </svg>
+            </a>
+        </div>
+        <div class="sidebar__nav">
+            <h2>NFT store</h2>
+            <nav>
+                <ul>
+                    <li><a href="/wallet">Wallet</a></li>
+                    <hr>
+                    <li><a href="/shop">Shop</a></li>
+                    <hr>
+                    <li><a href="/sell">Sell</a></li>
+                    <hr>
+                    <li><a href="/buy">Buy</a></li>
+                    <hr>
+                </ul>
+            </nav>
+        </div>
+
+    </div>
+<div class="artist-profile">
+    {% block content %}
+    {% endblock %}</div>
+</body>
+</html>

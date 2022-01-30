@@ -1,0 +1,315 @@
+/* =========================== ARTIST PROFILE =========================== */
+.artist-profile {
+    margin-left: 290px;
+    padding: 50px;
+}
+
+    .artist-profile h1 {
+        margin-bottom: 40px;
+        font: normal normal 600 40px/46px canada-type-gibson;
+        letter-spacing: 1px;
+        color: #373737;
+    }
+
+    .artist-profile form {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .artist-profile label {
+        font-size: 16px;
+        letter-spacing: 0.45px;
+        color: #373737;
+        opacity: 1;
+        font-weight: 500;
+    }
+
+    @media only screen and (max-width: 799px) {
+        .artist-profile {
+            margin-left: 150px;
+            text-align: center;
+            padding: 50px 25px;
+        }
+    }
+
+    @media only screen and (max-width: 599px) {
+        .artist-profile {
+            margin: 0 auto;
+            padding: 25px 5px
+        }
+
+        .artist-profile h1 {
+            font-size: 32px;
+        }
+    }
+
+
+
+
+/* ============ PROFILE IMAGE ============ */
+.profile-picture {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 40px;
+    height: 175px;
+}
+
+    .profile-picture__upload {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: space-evenly;
+        width: 100%;
+        max-width: 300px;
+        height: 100%;
+        margin-left: 20px;
+    }
+
+    .profile-picture__upload p {
+        font: normal normal normal 15px/22px mentone;
+        letter-spacing: 0px;
+        color: #3A3A3A;
+        opacity: 1;
+    }
+
+    .profile-picture__upload button {
+        border: 2px solid #71E0B3;
+        border-radius: 5px;
+        background-color: transparent;
+        display: flex;
+        height: 50px;
+        width: 130px;
+        align-items: center;
+        justify-content: space-evenly;
+        cursor: pointer;
+    }
+
+    .profile-picture__upload .material-icons {
+        font-size: 18px;
+    }
+
+    .profile-picture__upload button:hover {
+        background-color: #71E0B3;
+        color: white;
+    }
+
+    .profile-picture__container img {
+        width: 175px;
+        height: 175px;
+        border-radius: 100px;
+    }
+
+@media only screen and (max-width: 799px) {
+    .profile-picture {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 330px;
+        margin: 10px 0px;
+    }
+
+    .profile-picture__upload {
+        justify-content: space-evenly;
+        align-items: center;
+        text-align: center;
+    }
+}
+
+
+
+/* ====================== FORM ====================== */
+
+dl {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+    max-width: 1500px;
+    padding: 25px;
+    padding-left: 0px;
+    height: 100vh;
+}
+
+dl h2, .form__submit{
+    grid-column: 1 / 4;
+}
+.form__input {
+    padding-right: 30px;
+    margin: 10px 0px;
+    text-align: left;
+}
+
+.form__input input, textarea {
+    width: 100%;
+    border: 1px solid #8C8C8C;
+    min-height: 25px
+}
+
+.form__input dd {
+    margin: 10px 0px ;
+}
+
+@media only screen and (max-width: 799px) {
+    .form__input {
+        padding: 0px;
+    }
+}
+
+
+/* ====== GRID LAYOUT ===== */
+.form__username {
+    grid-column: 1 / 1;
+}
+
+.form__email {
+    grid-column: 2 / 2;
+}
+
+.form__ilp {
+    grid-column: 3 / 3;
+}
+
+.form__biography {
+    grid-column: 1 / 4;
+}
+
+    .form__biography textarea {
+        height: 100px;
+    }
+
+.form__genre {
+    grid-column: 1 / 4;
+}
+
+    .form__genre ul {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .form__genre li {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        width: 120px;
+        margin: 10px 20px;
+        margin-left: 0px;
+    }
+
+    .form__genre li label {
+        width: auto;
+        white-space: nowrap;
+        font-size: 0.9rem;
+    }
+
+    .form__genre li input {
+        height: 20px;
+        width: 20px;
+        min-height: 20px;
+        min-width: 20px;
+        flex-wrap: nowrap;
+        margin: 0px;
+        margin-right: 10px;
+        border-radius: 0px;
+    }
+
+    .form__genre li input:checked {
+        background-color: #71E0B3;
+    }
+
+.form__subgenre {
+    grid-column: 1 / 1;
+}
+
+.form__twitter {
+    grid-column: 1 / 1;
+}
+
+.form__bandcamp {
+    grid-column: 2 / 2;
+}
+
+.form__facebook {
+    grid-column: 3 / 3;
+}
+
+.form__spotify {
+    grid-column: 1 / 1;
+}
+
+.form__soundcloud {
+    grid-column: 2 / 2;
+}
+
+.form__instagram {
+    grid-column: 3 / 3;
+}
+
+.form__youtube {
+    grid-column: 1 / 1;
+}
+
+.form__www {
+    grid-column: 2 / 2;
+}
+
+@media only screen and (max-width: 799px) {
+    dl {
+        grid-template-columns: 1fr;
+        width: 80%;
+        margin: 0 auto;
+    }
+
+    .form__input {
+        grid-column: 1 / 1;
+    }
+
+    .form__genre li {
+        width: 125px;
+    }
+}
+
+@media only screen and (max-width: 639px) {
+    .form__input {
+        padding-right: 30px;
+    }
+
+    .form__genre {
+        padding: 0;
+        width: 100%;
+    }
+
+    .form__genre li {
+        width: 100px;
+    }
+}
+
+
+
+
+/* ============= SUBMIT BUTTON =========== */
+
+.btn {
+    background-color: white;
+    border: 2px solid #71E0B3;
+    border-radius: 5px;
+    opacity: 1;
+    margin: 30px 0px;
+    height: 50px;
+    width: 170px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background-color: #71E0B3;
+    color: white;
+}
+
+button:active, .btn:active {
+    transform: translateY(3px);
+    transition: transform 0.1s;
+    transition-timing-function: ease-in-out;
+}
