@@ -9,15 +9,15 @@ from xrpl.account import get_account_info
 from xrpl.models.requests import AccountNFTs
 from xrpl.utils import hex_to_str, drops_to_xrp
 from flask import Blueprint, render_template, session, redirect, url_for
+from utils import check_login
 
 wallet = Blueprint("wallet", __name__)
 
 
 @wallet.route("/wallet")
+@check_login
 def index():
     the_wallet = session.get("user_wallet", False)
-    if not the_wallet:
-        return redirect(url_for("index"))
     client = JsonRpcClient("http://xls20-sandbox.rippletest.net:51234")
     result = get_account_info(the_wallet, client).result
     info = {
@@ -30,6 +30,7 @@ def index():
     result = client.request(AccountNFTs(account=the_wallet, limit=150)).result
     info["nft_count"] = len(result["account_nfts"])
     nfts = []
+    # TODO: list buy/sell offers that are open for the things in the wallet
     for n in result["account_nfts"]:
         nfts.append(
             {

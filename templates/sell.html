@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Sell an NFT{% endblock %}
+{% block content %}
+{% if qr %}
+<a href="{{url}}"><img src="{{qr}}"/></a>
+<p>Selling {{token}} for {{price}} XRP.</p>
+
+<script>
+    webSocket = new WebSocket("{{ws}}");
+    webSocket.onmessage = function (event) {
+        data = JSON.parse(event.data);
+        console.log(data);
+        if (data.opened){
+            console.log('The signing request has been opened');
+            // TODO: hide the QR code & show a kindly message
+        }
+        if (data.payload_uuidv4 || false){
+            console.log('Send signing event')
+            fetch("/sell/{{token}}", {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(event.data)
+            })
+            .then(response => {
+                webSocket.close();
+                console.log(response.json())
+                location.href = '/wallet'
+            })
+        }
+    }
+</script>
+{% else %}
+<form action="{{ url_for('trade.sell') }}" method="post">
+    {% if cant_sell %}<fieldset disabled="disabled">{% endif %}
+    <input type="hidden" name="tokenid" value="{{nft}}">
+
+  <label for="fname">Sell for:</label>
+    <input type="text" name="price" value="100"></input>
+    <input type="submit">
+    {% if cant_sell %}</fieldset>{% endif %}
+</form>
+{% endif %}
+{% endblock %}

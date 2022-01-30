@@ -37,12 +37,24 @@
                     <hr>
                     <li><a href="/buy">Buy</a></li>
                     <hr>
+                    <li><a href="/logout">Logout</a></li>
+                    <hr>
                 </ul>
             </nav>
         </div>
 
     </div>
 <div class="artist-profile">
+    <h1>{% block title %}{% endblock %}</h1>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class=flashes>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
     {% block content %}
     {% endblock %}</div>
 </body>

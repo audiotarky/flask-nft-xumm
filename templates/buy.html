@@ -1,24 +1,23 @@
 {% extends 'base.html' %}
-{%block title%}Welcome{%endblock%}
+
+{% block title %}Buy{% endblock %}
+
 {% block content %}
-<p>Please login with <a href="https://xumm.app/">XUMM</a></p>
+<p>Please sign the transaction with <a href="https://xumm.app/">XUMM</a></p>
 {% include '_qr.html' %}
 <script>
     webSocket = new WebSocket("{{ws}}");
     webSocket.onmessage = function (event) {
         data = JSON.parse(event.data);
         console.log(data);
-
         if (data.payload_uuidv4 || false){
-            console.log('Signed in!')
-            fetch("/", {
+            fetch("/buy", {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(event.data)
             })
             .then(response => {
                 webSocket.close();
-                location.href = '/wallet'
             })
         }
     }

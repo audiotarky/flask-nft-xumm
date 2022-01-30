@@ -17,10 +17,20 @@ The last command should be temporary...
 
 ### Configuration
 
-The code requires a single configuration file, `xumm_creds.json`, which holds
-your XUMM credentials, as so:
+The code requires a two configuration files, `creds.json` which holds the
+wallet credentials used by the marketplace:
 
+```json
+{
+    "address": "WALLET ADDRESS",
+    "secret": "WALLET SEQUENCE",
+    "sequence": 1234567890
+}
 ```
+
+and `xumm_creds.json`, which holds your XUMM credentials, as so:
+
+```json
 {
     "x-api-key": "YOUR ACCOUNT KEY",
     "x-api-secret": "YOUR ACCOUNT SECRET"
