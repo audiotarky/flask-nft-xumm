@@ -1,5 +1,6 @@
 from functools import wraps
-from flask import session, redirect, url_for
+
+from flask import redirect, session, url_for
 
 
 def check_login(f):
