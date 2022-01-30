@@ -10,6 +10,10 @@ def create_app():
     app.config.from_object(__name__)
     app.secret_key = str(uuid.uuid1())
 
+    from wallet import wallet as wallet_blueprint
+
+    app.register_blueprint(wallet_blueprint)
+
     return app
 
 
