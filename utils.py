@@ -1,6 +1,7 @@
 from functools import wraps
 
 from flask import redirect, session, url_for
+from xrpl.transaction import get_transaction_from_hash
 
 
 def check_login(f):
@@ -14,3 +15,15 @@ def check_login(f):
         return f(*args, **kwargs)
 
     return decorated_function
+
+
+def offer_id_from_transaction_hash(txn_hash, client):
+    print("searching for", txn_hash)
+    txn = get_transaction_from_hash(txn_hash, client)
+    print(txn)
+    for node in txn.result["meta"]["AffectedNodes"]:
+        for node_type in ["CreatedNode", "ModifiedNode"]:
+            if node_type in node:
+                if node[node_type]["LedgerEntryType"] == "NFTokenOffer":
+                    print("found", node[node_type]["LedgerIndex"], "for", txn_hash)
+                    return node[node_type]["LedgerIndex"]

@@ -27,7 +27,7 @@ from flask import (
 )
 from requests import HTTPError
 from xrpl.clients import JsonRpcClient
-from xrpl.models.requests import AccountNFTs, NFTSellOffers
+from xrpl.models.requests import AccountNFTs, NFTSellOffers, NFTBuyOffers
 from xrpl.models.transactions import (
     Memo,
     NFTokenAcceptOffer,
@@ -43,12 +43,18 @@ from xrpl.wallet import Wallet
 from xrplpers.nfts.entities import TokenID
 from xrplpers.xumm.transactions import get_xumm_transaction, submit_xumm_transaction
 
-from utils import check_login
+from utils import (
+    check_login,
+    offer_id_from_transaction_hash,
+    offer_id_from_transaction_hash,
+)
 
 trade = Blueprint("trade", __name__)
 ledger_url = "http://xls20-sandbox.rippletest.net:51234"
 client = JsonRpcClient(ledger_url)
 environ["XUMM_CREDS_PATH"] = "xumm_creds.json"
+creds = json.loads(Path("creds.json").read_text())
+marketplace_wallet = Wallet(seed=creds["secret"], sequence=creds["sequence"])
 
 
 @cache
@@ -99,58 +105,76 @@ def shop(issuer=None):
 @check_login
 def buy(nft=None):
     if request.method == "POST":
+
+        # BROKER MODE IN DEVELOPMENT
         # Now do the NFTokenAcceptOffer as a broker
+        # https://github.com/XRPLF/XRPL-Standards/discussions/46#discussioncomment-1970982
+        # con = sqlite3.connect("xumm.db")
+        # cur = con.cursor()
+        # # TODO: look up the sell offer index form the DB here
+        # sale_txn = cur.execute(
+        #     "select signing_txn from stock where token_id = ?",
+        #     [nft],
+        # ).fetchone()[0]
+        # con.close()
+
         data = json.loads(request.json)
         print(data)
-        xumm_data = {"buy": get_xumm_transaction(data["payload_uuidv4"])}
-        print(xumm_data)
-        con = sqlite3.connect("xumm.db")
-        cur = con.cursor()
-        row = cur.execute(
-            "select signing_txn from stock where token_id = ?",
-            [xumm_data["buy"]["payload"]["request_json"]["TokenID"]],
-        ).fetchone()
-        con.close()
-        print(row)
-        xumm_data["sell"] = get_xumm_transaction(row[0])
-        print(xumm_data)
+        # xumm_data = {
+        #     "buy": get_xumm_transaction(data["payload_uuidv4"]),
+        #     "sell": get_xumm_transaction(sale_txn),
+        # }
+        # nft = xumm_data["buy"]["payload"]["request_json"]["TokenID"]
 
-        creds = json.loads(Path("creds.json").read_text())
-        ammount = int(xumm_data["buy"]["payload"]["request_json"]["Amount"])
-        broker_fee = str(int(ammount - (ammount / 1.1)))
+        # ammount = int(xumm_data["buy"]["payload"]["request_json"]["Amount"])
+        # broker_fee = str(int(ammount - (ammount / 1.1)))
 
-        purchase = {
-            "account": creds["address"],
-            "broker_fee": broker_fee,
-            "buy_offer": xumm_data["buy"]["response"]["txid"],
-            "sell_offer": xumm_data["sell"]["response"]["txid"],
-        }
-        print(purchase)
-        creds = json.loads(Path("creds.json").read_text())
-        wallet = Wallet(seed=creds["secret"], sequence=creds["sequence"])
+        # purchase = {
+        #     "account": creds["address"],
+        #     "broker_fee": broker_fee,
+        #     "buy_offer": offer_id_from_transaction_hash(
+        #         xumm_data["buy"]["response"]["txid"], client
+        #     ),
+        #     "sell_offer": offer_id_from_transaction_hash(
+        #         xumm_data["sell"]["response"]["txid"], client
+        #     ),
+        # }
 
-        purchase_txn = safe_sign_and_autofill_transaction(
-            NFTokenAcceptOffer.from_dict(purchase), wallet, client
-        )
-        print(purchase_txn)
-        submitted_purchase_txn = send_reliable_submission(purchase_txn, client)
-        print(submitted_purchase_txn)
+        # sells = client.request(NFTSellOffers(tokenid=nft)).result["offers"]
+        # assert len([o for o in sells if o["index"] == purchase["sell_offer"]]) == 1
+
+        # print(purchase)
+        # accept = NFTokenAcceptOffer.from_dict(purchase)
+        # accept.validate()
+
+        # purchase_txn = safe_sign_and_autofill_transaction(
+        #     accept, marketplace_wallet, client
+        # )
+        # print(purchase_txn)
+
+        # submitted_purchase_txn = send_reliable_submission(purchase_txn, client)
+        # print(submitted_purchase_txn)
         return '{"ok": true}'
+        # TODO: if the sale falls through, cancel the buy offer via NFTokenCancelOffer
     the_wallet = session.get("user_wallet", False)
     if not nft:
         return redirect(url_for("trade.shop"))
     # Create the purchase offer then bring the two together as a broker
-    token = TokenID.from_hex(nft)
     offers = client.request(NFTSellOffers(tokenid=nft)).result
     print(offers["offers"][-1])
-    purchase = {
-        "account": the_wallet,
-        "owner": offers["offers"][-1]["owner"],
-        "amount": str(int(1.1 * int(offers["offers"][-1]["amount"]))),
-        "token_id": token.to_str(),
-    }
-    print(purchase)
-    buy = NFTokenCreateOffer.from_dict(purchase)
+    # BROKER MODE IN DEVELOPMENT
+    # purchase = {
+    #     "account": the_wallet,
+    #     "owner": offers["offers"][-1]["owner"],
+    #     "amount": str(int(1.1 * int(offers["offers"][-1]["amount"]))),
+    #     "token_id": token.to_str(),
+    # }
+    # print(purchase)
+    # buy = NFTokenCreateOffer.from_dict(purchase)
+    buy = NFTokenAcceptOffer(
+        account=the_wallet,
+        sell_offer=offers["offers"][-1]["index"],
+    )
     print(session["user_token"])
     try:
         r = submit_xumm_transaction(buy.to_xrpl(), user_token=session["user_token"])
@@ -213,7 +237,8 @@ def sell(nft=None):
         # Call the XUM API to have the signing handled there
         r = submit_xumm_transaction(sell.to_xrpl(), user_token=session["user_token"])
         xumm_data = r.json()
-
+        print(xumm_data)
+        # offer_id_from_transaction_hash()
         con = sqlite3.connect("xumm.db")
         cur = con.cursor()
         cur.execute(
@@ -251,3 +276,6 @@ def sell(nft=None):
 @check_login
 def sold(nft=None):
     return render_template("sold.html", nft=nft)
+
+
+# TODO: unlist a token via a NFTokenCancelOffer
