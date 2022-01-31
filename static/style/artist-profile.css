@@ -313,3 +313,10 @@ button:active, .btn:active {
     transition: transform 0.1s;
     transition-timing-function: ease-in-out;
 }
+
+label{
+    padding: 0.5em;
+}
+div.nft_listing{
+    padding: 0.5em;
+}

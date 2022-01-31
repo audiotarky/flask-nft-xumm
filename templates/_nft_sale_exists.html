@@ -1,1 +1,5 @@
-Token already has an open sell offer - <a href="{{url_for("trade.buy")}}/{{nft}}">see it in the shop!</a>
+Token already has an open sell offer
+- <a href="{{url_for("trade.buy")}}/{{nft}}">see it in the shop!</a>
+{% for offer in offers %}
+<p>Existing offer open: <a href="/wallet/cancel/{{offer}}">click to cancel sale</a></p>
+{% endfor %}

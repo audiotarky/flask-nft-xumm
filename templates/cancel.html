@@ -1,10 +1,7 @@
 {% extends 'base.html' %}
-
-{% block title %}Buy{% endblock %}
-
+{% block title %}Wallet{% endblock %}
 {% block content %}
-<p>Please sign the transaction with <a href="https://xumm.app/">XUMM</a></p>
-<p>{{offer['owner']}} is selling this NFT for {{'%0.2f'| format(drops_to_xrp(offer['amount']))}}XRP</p>
+<p>Cancelling sale offer {{offer}} - please confirm by signing in XUMM.</p>
 {% include '_qr.html' %}
 <script>
     webSocket = new WebSocket("{{ws}}");
@@ -12,14 +9,14 @@
         data = JSON.parse(event.data);
         console.log(data);
         if (data.payload_uuidv4 || false){
-            fetch("/buy", {
+            fetch("/wallet/cancel/{{offer}}", {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(event.data)
             })
             .then(response => {
                 webSocket.close();
-                location.href = '/sold/{{nft}}'
+                location.href = '/wallet'
             })
         }
     }

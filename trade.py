@@ -45,7 +45,7 @@ from xrplpers.xumm.transactions import get_xumm_transaction, submit_xumm_transac
 
 from utils import (
     check_login,
-    offer_id_from_transaction_hash,
+    cache_offer_to_db,
     offer_id_from_transaction_hash,
 )
 
@@ -74,7 +74,7 @@ def shop(issuer=None):
     nfts = []
     con = sqlite3.connect("xumm.db")
     cur = con.cursor()
-    sql = "select token_id, signing_txn, seller from stock where signed = 1"
+    sql = "select token_id, sale_offer, seller from stock where signed = 1"
 
     for row in cur.execute(sql):
         t = TokenID.from_hex(row[0])
@@ -84,20 +84,33 @@ def shop(issuer=None):
         # TODO: Cross reference against all sell offers for a token
         # https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.requests.html?highlight=NFToken#xrpl.models.requests.NFTSellOffers.tokenid
 
+        offers = client.request(NFTSellOffers(tokenid=t.to_str())).result
         result = get_nft_list_for_account(row[2])
-        for n in result.result["account_nfts"]:
-            if n["TokenID"] == row[0]:
+        for n in offers.get("offers", []):
+            detail = [
+                x
+                for x in result.result["account_nfts"]
+                if x["TokenID"] == offers["tokenid"]
+            ][0]
+            if n["owner"] == row[2]:
                 nfts.append(
                     {
                         "issuer": t.issuer,
                         "id": t.to_str(),
                         "fee": t.transfer_fee,
-                        "uri": hex_to_str(n["URI"]),
-                        "serial": n["nft_serial"],
+                        "uri": hex_to_str(detail["URI"]),
+                        "serial": detail["nft_serial"],
+                        "owner": row[2],
+                        "offer": n,
                     }
                 )
     con.close()
-    return render_template("shop.html", info=info, nfts=nfts)
+    return render_template(
+        "shop.html",
+        info=info,
+        nfts=nfts,
+        drops_to_xrp=drops_to_xrp,
+    )
 
 
 @trade.route("/buy", methods=["POST", "GET"])
@@ -113,7 +126,7 @@ def buy(nft=None):
         # cur = con.cursor()
         # # TODO: look up the sell offer index form the DB here
         # sale_txn = cur.execute(
-        #     "select signing_txn from stock where token_id = ?",
+        #     "select sale_offer from stock where token_id = ?",
         #     [nft],
         # ).fetchone()[0]
         # con.close()
@@ -159,10 +172,8 @@ def buy(nft=None):
     the_wallet = session.get("user_wallet", False)
     if not nft:
         return redirect(url_for("trade.shop"))
-    # Create the purchase offer then bring the two together as a broker
-    offers = client.request(NFTSellOffers(tokenid=nft)).result
-    print(offers["offers"][-1])
     # BROKER MODE IN DEVELOPMENT
+    # Create the purchase offer then bring the two together as a broker
     # purchase = {
     #     "account": the_wallet,
     #     "owner": offers["offers"][-1]["owner"],
@@ -171,27 +182,36 @@ def buy(nft=None):
     # }
     # print(purchase)
     # buy = NFTokenCreateOffer.from_dict(purchase)
+    offers = client.request(NFTSellOffers(tokenid=nft)).result
+    if not offers.get("offers", False):
+        flash("No sell offers available")
+        return redirect(url_for("trade.shop"))
+
     buy = NFTokenAcceptOffer(
         account=the_wallet,
         sell_offer=offers["offers"][-1]["index"],
     )
-    print(session["user_token"])
     try:
         r = submit_xumm_transaction(buy.to_xrpl(), user_token=session["user_token"])
     except HTTPError as e:
         print(e)
     xumm_data = r.json()
-    print(xumm_data)
+    if offers["offers"][-1]["owner"] == the_wallet:
+        flash("You own this NFT")
     return render_template(
         "buy.html",
         qr=xumm_data["refs"]["qr_png"],
         url=xumm_data["next"]["always"],
         ws=xumm_data["refs"]["websocket_status"],
+        offer=offers["offers"][-1],
+        nft=nft,
+        drops_to_xrp=drops_to_xrp,
     )
 
 
-def _flash_nft_sell_exists(nft):
-    flash(Markup(render_template("_nft_sale_exists.html", nft=nft)))
+def _flash_nft_sell_exists(nft, offers):
+    offers = [x["index"] for x in offers["offers"]]
+    flash(Markup(render_template("_nft_sale_exists.html", nft=nft, offers=offers)))
 
 
 @trade.route("/sell", methods=["POST", "GET"])
@@ -207,10 +227,13 @@ def sell(nft=None):
         # Store the Sell offer transaction id
         con = sqlite3.connect("xumm.db")
         cur = con.cursor()
-        print(json.loads(request.json))
+        sell_offer = get_xumm_transaction(json.loads(request.json)["payload_uuidv4"])
+        txn = sell_offer["response"]["txid"]
+        offer_id = offer_id_from_transaction_hash(txn, client)
+
         cur.execute(
-            "update stock set signed = 1 where signing_txn = ?",
-            [json.loads(request.json)["payload_uuidv4"]],
+            "update stock set signed = 1, sale_offer = ? where sale_offer = ?",
+            [offer_id, json.loads(request.json)["payload_uuidv4"]],
         )
         con.commit()
         con.close()
@@ -219,7 +242,7 @@ def sell(nft=None):
         # Create the sale offer, and have XUMM generate the QR to let the seller sign it
         offers = client.request(NFTSellOffers(tokenid=request.form["tokenid"])).result
         if len(offers.get("offers", [])) > 0:
-            _flash_nft_sell_exists(request.form["tokenid"])
+            _flash_nft_sell_exists(request.form["tokenid"], offers)
 
             return render_template(
                 "sell.html", nft=request.form["tokenid"], cant_sell=True
@@ -239,14 +262,8 @@ def sell(nft=None):
         xumm_data = r.json()
         print(xumm_data)
         # offer_id_from_transaction_hash()
-        con = sqlite3.connect("xumm.db")
-        cur = con.cursor()
-        cur.execute(
-            "insert into stock values (?, ?, ?, ?)",
-            (token.to_str(), xumm_data["uuid"], 0, the_wallet),
-        )
-        con.commit()
-        con.close()
+
+        cache_offer_to_db(token.to_str(), xumm_data["uuid"], 0, the_wallet)
 
         qr = xumm_data["refs"]["qr_png"]
         url = xumm_data["next"]["always"]
@@ -267,15 +284,20 @@ def sell(nft=None):
         offers = client.request(NFTSellOffers(tokenid=nft)).result
         cant_sell = False
         if len(offers.get("offers", [])) > 0:
-            _flash_nft_sell_exists(nft)
+            # TODO: add the sale offer to the DB if not in it already
+            _flash_nft_sell_exists(nft, offers)
             cant_sell = True
         return render_template("sell.html", nft=nft, cant_sell=cant_sell)
 
 
+@trade.route("/sold", methods=["GET"])
 @trade.route("/sold/<nft>", methods=["GET"])
 @check_login
 def sold(nft=None):
-    return render_template("sold.html", nft=nft)
+    if nft:
+        return render_template("sold.html", nft=nft)
+    else:
+        return redirect(url_for("trade.shop"))
 
 
 # TODO: unlist a token via a NFTokenCancelOffer

@@ -2,6 +2,7 @@ from functools import wraps
 
 from flask import redirect, session, url_for
 from xrpl.transaction import get_transaction_from_hash
+import sqlite3
 
 
 def check_login(f):
@@ -27,3 +28,14 @@ def offer_id_from_transaction_hash(txn_hash, client):
                 if node[node_type]["LedgerEntryType"] == "NFTokenOffer":
                     print("found", node[node_type]["LedgerIndex"], "for", txn_hash)
                     return node[node_type]["LedgerIndex"]
+
+
+def cache_offer_to_db(token_id, sale_offer, signed, seller):
+    con = sqlite3.connect("xumm.db")
+    cur = con.cursor()
+    cur.execute(
+        "insert into stock values (?, ?, ?, ?)",
+        (token_id, sale_offer, signed, seller),
+    )
+    con.commit()
+    con.close()
