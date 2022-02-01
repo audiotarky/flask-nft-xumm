@@ -85,23 +85,25 @@ def shop(issuer=None):
         offers = client.request(NFTSellOffers(tokenid=t.to_str())).result
         result = get_nft_list_for_account(row[2])
         for n in offers.get("offers", []):
-            detail = [
+            details = [
                 x
                 for x in result.result["account_nfts"]
                 if x["TokenID"] == offers["tokenid"]
-            ][0]
-            if n["owner"] == row[2]:
-                nfts.append(
-                    {
-                        "issuer": t.issuer,
-                        "id": t.to_str(),
-                        "fee": t.transfer_fee,
-                        "uri": hex_to_str(detail["URI"]),
-                        "serial": detail["nft_serial"],
-                        "owner": row[2],
-                        "offer": n,
-                    }
-                )
+            ]
+            if len(details):
+                detail = details[0]
+                if n["owner"] == row[2]:
+                    nfts.append(
+                        {
+                            "issuer": t.issuer,
+                            "id": t.to_str(),
+                            "fee": t.transfer_fee,
+                            "uri": hex_to_str(detail["URI"]),
+                            "serial": detail["nft_serial"],
+                            "owner": row[2],
+                            "offer": n,
+                        }
+                    )
     con.close()
     return render_template(
         "shop.html",
@@ -296,6 +298,3 @@ def sold(nft=None):
         return render_template("sold.html", nft=nft)
     else:
         return redirect(url_for("trade.shop"))
-
-
-# TODO: unlist a token via a NFTokenCancelOffer

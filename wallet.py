@@ -118,11 +118,9 @@ def mint():
         xumm_data = r.json()
         print(xumm_data)
 
-        qr = xumm_data["refs"]["qr_png"]
-        url = xumm_data["next"]["always"]
         return render_template(
             "minter.html",
-            qr=qr,
-            url=url,
+            qr=xumm_data["refs"]["qr_png"],
+            url=xumm_data["next"]["always"],
             ws=xumm_data["refs"]["websocket_status"],
         )
