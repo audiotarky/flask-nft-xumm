@@ -10,7 +10,13 @@ GET /sell/$NFT - put the NFT up for sale
 """
 import json
 import sqlite3
-from functools import cache
+import sys
+
+py_version = sys.version_info
+if py_version.major == 3 and py_version.minor >= 9:
+    from functools import cache
+else:
+    from functools import lru_cache as cache
 from os import environ
 from pathlib import Path
 
