@@ -17,6 +17,7 @@ if py_version.major == 3 and py_version.minor >= 9:
     from functools import cache
 else:
     from functools import lru_cache as cache
+
 from os import environ
 from pathlib import Path
 
@@ -33,27 +34,18 @@ from flask import (
 )
 from requests import HTTPError
 from xrpl.clients import JsonRpcClient
-from xrpl.models.requests import AccountNFTs, NFTSellOffers, NFTBuyOffers
+from xrpl.models.requests import AccountNFTs, NFTSellOffers
 from xrpl.models.transactions import (
-    Memo,
     NFTokenAcceptOffer,
     NFTokenCreateOffer,
     NFTokenCreateOfferFlag,
 )
-from xrpl.transaction import (
-    safe_sign_and_autofill_transaction,
-    send_reliable_submission,
-)
-from xrpl.utils import drops_to_xrp, hex_to_str, str_to_hex, xrp_to_drops
+from xrpl.utils import drops_to_xrp, hex_to_str, xrp_to_drops
 from xrpl.wallet import Wallet
 from xrplpers.nfts.entities import TokenID
 from xrplpers.xumm.transactions import get_xumm_transaction, submit_xumm_transaction
 
-from utils import (
-    check_login,
-    cache_offer_to_db,
-    offer_id_from_transaction_hash,
-)
+from utils import cache_offer_to_db, check_login, offer_id_from_transaction_hash
 
 trade = Blueprint("trade", __name__)
 ledger_url = "http://xls20-sandbox.rippletest.net:51234"
@@ -64,7 +56,7 @@ marketplace_wallet = Wallet(seed=creds["secret"], sequence=creds["sequence"])
 
 
 @cache
-def get_nft_list_for_account(account, marker=None):
+def get_nft_list_for_account(account):
     print("uncached")
     return client.request(AccountNFTs(account=account, limit=150))
 

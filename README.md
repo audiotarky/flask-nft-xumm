@@ -52,3 +52,8 @@ and will make a file called `xumm.db` in the root of the app.
 ```
 python app.py
 ```
+
+
+## Dev
+
+Code is formatted with black. Imports are tidied with `isort --profile black .`.

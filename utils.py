@@ -1,8 +1,8 @@
+import sqlite3
 from functools import wraps
 
 from flask import redirect, session, url_for
 from xrpl.transaction import get_transaction_from_hash
-import sqlite3
 
 
 def check_login(f):

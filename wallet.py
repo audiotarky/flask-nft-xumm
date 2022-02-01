@@ -3,16 +3,18 @@ Implements one endpoint:
 
 GET /wallet - lists all NFTs owned by the logged in user
 """
+import sqlite3
 from collections import defaultdict
-from flask import Blueprint, jsonify, render_template, session, request
+
+from flask import Blueprint, jsonify, render_template, request, session
 from xrpl.account import get_account_info
 from xrpl.clients import JsonRpcClient
 from xrpl.models.requests import AccountNFTs
-from xrpl.models.transactions import NFTokenCancelOffer, NFTokenMint, Memo
+from xrpl.models.transactions import Memo, NFTokenCancelOffer, NFTokenMint
 from xrpl.utils import drops_to_xrp, hex_to_str, str_to_hex
 from xrplpers.nfts.entities import TransferFee
 from xrplpers.xumm.transactions import submit_xumm_transaction
-import sqlite3
+
 from utils import check_login
 
 wallet = Blueprint("wallet", __name__)
