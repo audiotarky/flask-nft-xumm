@@ -30,8 +30,7 @@ app = create_app()
 environ["XUMM_CREDS_PATH"] = "xumm_creds.json"
 
 
-@app.route("/", methods=["POST"])
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
         data = json.loads(request.json)
