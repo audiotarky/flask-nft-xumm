@@ -4,13 +4,13 @@ Implements one endpoint:
 GET /wallet - lists all NFTs owned by the logged in user
 """
 from collections import defaultdict
-from crypt import methods
 from flask import Blueprint, jsonify, render_template, session, request
 from xrpl.account import get_account_info
 from xrpl.clients import JsonRpcClient
 from xrpl.models.requests import AccountNFTs
-from xrpl.models.transactions import NFTokenCancelOffer
-from xrpl.utils import drops_to_xrp, hex_to_str
+from xrpl.models.transactions import NFTokenCancelOffer, NFTokenMint, Memo
+from xrpl.utils import drops_to_xrp, hex_to_str, str_to_hex
+from xrplpers.nfts.entities import TransferFee
 from xrplpers.xumm.transactions import submit_xumm_transaction
 import sqlite3
 from utils import check_login
@@ -85,3 +85,42 @@ def cancel(offer):
         con.close()
 
         return jsonify({"ok": True})
+
+
+@wallet.route("/wallet/mint", methods=["GET", "POST"])
+@check_login
+def mint():
+    if request.method == "GET":
+        return render_template("minter.html")
+    elif request.json:
+        print(request.json)
+        return jsonify({"ok": True})
+    else:
+        # Call the XUM API to have the signing handled there
+        the_wallet = session.get("user_wallet", False)
+        memoes = [Memo.from_dict({"memo_data": str_to_hex("Minted by Audiotarky")})]
+        if "memo" in request.form and request.form["memo"]:
+            memoes.append(
+                Memo.from_dict({"memo_data": str_to_hex(request.form["memo"])})
+            )
+        mint_args = {
+            "account": the_wallet,
+            "flags": 8,
+            "uri": str_to_hex(request.form["uri"]),
+            "memos": memoes,
+            "transfer_fee": TransferFee.from_percent(int(request.form["fee"])).value,
+            "token_taxon": 0,
+        }
+        mint = NFTokenMint.from_dict(mint_args)
+        r = submit_xumm_transaction(mint.to_xrpl(), user_token=session["user_token"])
+        xumm_data = r.json()
+        print(xumm_data)
+
+        qr = xumm_data["refs"]["qr_png"]
+        url = xumm_data["next"]["always"]
+        return render_template(
+            "minter.html",
+            qr=qr,
+            url=url,
+            ws=xumm_data["refs"]["websocket_status"],
+        )

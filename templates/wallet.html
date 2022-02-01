@@ -4,6 +4,8 @@
 
 <label>Wallet {{info['address']}} owns {{info['nft_count']}} and has minted {{info['minted']}} nfts. It currently has a balance of {{info['balance_xrp']}}XRP</label>
 
+<button  class="btn"><a href="{{ url_for('wallet.mint') }}">Submit an NFT</a></button>
+
 {% for n in nfts %}
 <div class="nft_listing">
     <p>Token {{n["id"]}} was issued by <a href="/shop/{{n["issuer"]}}">{{n["issuer"]}}</a> and points to <a href="{{n["uri"]}}">{{n["uri"]}}</a>. It has a serial of {{n['serial']}}.</p>

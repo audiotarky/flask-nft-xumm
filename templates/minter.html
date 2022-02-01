@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Mint an NFT{% endblock %}
+{% block content %}
+{% if qr %}
+<a href="{{url}}"><img src="{{qr}}"/></a>
+<script>
+    webSocket = new WebSocket("{{ws}}");
+    webSocket.onmessage = function (event) {
+        data = JSON.parse(event.data);
+        console.log(data);
+        if (data.opened){
+            console.log('The signing request has been opened');
+            // TODO: hide the QR code & show a kindly message
+        }
+        if (data.payload_uuidv4 || false){
+            console.log('Send signing event')
+            fetch("{{ url_for('wallet.mint') }}", {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(event.data)
+            })
+            .then(response => {
+                webSocket.close();
+                console.log(response.json())
+                location.href = "/wallet"
+            })
+        }
+    }
+</script>
+{% else %}
+<form action="{{ url_for('wallet.mint') }}" method="post">
+    <label for="fname">URI of NFT:<input type="text" name="uri"></input></label>
+    <label for="fname">Secondary sale fee %:<input type="text" name="fee" value="25"></input></label>
+    <label for="fname">Memo:<input type="text" name="memo"></input></label>
+    <input type="submit">
+</form>
+{% endif %}
+{% endblock %}

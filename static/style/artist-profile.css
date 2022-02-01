@@ -303,9 +303,19 @@ dl h2, .form__submit{
     cursor: pointer;
 }
 
+.btn a{
+    color: #71E0B3;
+    text-decoration: none;
+}
+
 .btn:hover {
     background-color: #71E0B3;
     color: white;
+}
+
+.btn:hover a {
+    color: white;
+    text-decoration: none;
 }
 
 button:active, .btn:active {
