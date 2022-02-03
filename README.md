@@ -53,6 +53,10 @@ and will make a file called `xumm.db` in the root of the app.
 python app.py
 ```
 
+To use the app you will need to create a wallet on the XLS20 dev net, you can do that
+via the [NFT-devnet credentials button on here](https://xrpl.org/xrp-testnet-faucet.html), and add it to XUMM. You will also need to add the devnet to XUMM, which can be done by scanning the QR code below. Do this at your own risk! You may also want to turn on developer mode in XUMM. **BE CAREFUL** and don't accidentally use the wrong account!
+
+![Scan to add NFT devnet to XUMM - be careful](xumm_nft_qr.png "Scan to add NFT devnet to XUMM - be careful")
 
 ## Dev
 
