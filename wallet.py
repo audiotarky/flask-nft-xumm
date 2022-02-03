@@ -6,7 +6,16 @@ GET /wallet - lists all NFTs owned by the logged in user
 import sqlite3
 from collections import defaultdict
 
-from flask import Blueprint, jsonify, render_template, request, session
+from flask import (
+    Blueprint,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from xrpl.account import get_account_info
 from xrpl.clients import JsonRpcClient
 from xrpl.models.requests import AccountNFTs
@@ -25,12 +34,16 @@ wallet = Blueprint("wallet", __name__)
 def index():
     the_wallet = session.get("user_wallet", False)
     client = JsonRpcClient("http://xls20-sandbox.rippletest.net:51234")
-    result = get_account_info(the_wallet, client).result
+    try:
+        result = get_account_info(the_wallet, client).result
+    except:
+        flash("Could not find the wallet - not a test net account?")
+        return redirect(url_for("index"))
     info = {
         "address": the_wallet,
         "minted": result["account_data"].get("MintedTokens", 0),
-        "balance_xrp": str(drops_to_xrp(result["account_data"]["Balance"])),
-        "balance_drops": result["account_data"]["Balance"],
+        "balance_xrp": str(drops_to_xrp(result["account_data"].get("Balance", 0))),
+        "balance_drops": result["account_data"].get("Balance", 0),
     }
 
     result = client.request(AccountNFTs(account=the_wallet, limit=150)).result
