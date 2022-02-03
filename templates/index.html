@@ -3,6 +3,7 @@
 {% block content %}
 <p>Please login with <a href="https://xumm.app/">XUMM</a></p>
 {% include '_qr.html' %}
+<p>More info about this app <a href="https://github.com/audiotarky/flask-nft-xumm/blob/main/README.md">can be found here</a></p>
 <script>
     webSocket = new WebSocket("{{ws}}");
     webSocket.onmessage = function (event) {
