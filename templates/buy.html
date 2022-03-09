@@ -1,10 +1,32 @@
 {% extends 'base.html' %}
 
-{% block title %}Buy{% endblock %}
+{% block title %}
+{% if confirmation %}
+Sale complete!
+{% else %}
+Buy
+{% endif %}
+{% endblock %}
 
 {% block content %}
+{% if confirmation %}
+<p>Sale complete!</p>
+<div class="nft_listing">
+<p>Your buy offer {{sale.result['BuyOffer']}} was successful!</p>
+
+<p><a href="https://xls20.bithomp.com/explorer/{{sale.result['hash']}}">Examine transaction</a></p>
+</div>
+<div class="nft_listing">
+    <code>
+        {{sale}}
+    </code>
+</div>
+
+<p>Back to <a href="{{ url_for('wallet.index') }}">your wallet</a>.</p>
+{% else %}
 <p>Please sign the transaction with <a href="https://xumm.app/">XUMM</a></p>
-<p>{{offer['owner']}} is selling this NFT for {{'%0.2f'| format(drops_to_xrp(offer['amount']))}}XRP</p>
+<p>{{offer['owner']}} is selling this NFT for {{'%0.2f'| format(drops_to_xrp(offer['amount']))}}XRP + 10% broker fee</p>
+
 {% include '_qr.html' %}
 <script>
     webSocket = new WebSocket("{{ws}}");
@@ -12,16 +34,10 @@
         data = JSON.parse(event.data);
         console.log(data);
         if (data.payload_uuidv4 || false){
-            fetch("/buy", {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(event.data)
-            })
-            .then(response => {
-                webSocket.close();
-                location.href = '/sold/{{nft}}'
-            })
+            webSocket.close();
+            location.href = '/buy/{{nft}}?confirm='+data.payload_uuidv4
         }
     }
 </script>
+{% endif %}
 {% endblock %}

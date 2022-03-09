@@ -4,7 +4,7 @@
 
 <label>Wallet {{info['address']}} owns {{info['nft_count']}} and has minted {{info['minted']}} nfts. It currently has a balance of {{info['balance_xrp']}}XRP</label>
 
-<button  class="btn"><a href="{{ url_for('wallet.mint') }}">Submit an NFT</a></button>
+<button class="btn"><a href="{{ url_for('wallet.mint') }}">Submit an NFT</a></button>
 
 {% for n in nfts %}
 <div class="nft_listing">
