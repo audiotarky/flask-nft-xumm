@@ -60,15 +60,15 @@ def index():
     con.close()
     for n in result["account_nfts"]:
         # We could look up offers here, but it's slow - round trip to the ledge for each NFT
-        # offers = client.request(NFTSellOffers(tokenid=n["TokenID"])).result
+        # offers = client.request(NFTSellOffers(tokenid=n["NFTokenID"])).result
         nfts.append(
             {
                 "issuer": n["Issuer"],
-                "id": n["TokenID"],
+                "id": n["NFTokenID"],
                 "fee": n["TransferFee"],
                 "uri": hex_to_str(n["URI"]),
                 "serial": n["nft_serial"],
-                "offers": offer_lookup.get(n["TokenID"], []),
+                "offers": offer_lookup.get(n["NFTokenID"], []),
             }
         )
     return render_template("wallet.html", info=info, nfts=nfts)
