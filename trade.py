@@ -29,9 +29,9 @@ from flask import (
     redirect,
     render_template,
     request,
-    session,
     url_for,
 )
+from flask_login import current_user, login_required
 from requests import HTTPError
 from xrpl.clients import JsonRpcClient
 from xrpl.models.requests import AccountNFTs, NFTSellOffers
@@ -49,7 +49,8 @@ from xrpl.wallet import Wallet
 from xrplpers.nfts.entities import TokenID
 from xrplpers.xumm.transactions import get_xumm_transaction, submit_xumm_transaction
 
-from utils import cache_offer_to_db, check_login, offer_id_from_transaction_hash
+from utils import cache_offer_to_db, offer_id_from_transaction_hash
+
 
 trade = Blueprint("trade", __name__)
 ledger_url = "http://xls20-sandbox.rippletest.net:51234"
@@ -62,7 +63,7 @@ marketplace_wallet = Wallet(seed=creds["secret"], sequence=creds["sequence"])
 @cache
 def get_nft_list_for_account(account):
     print("uncached")
-    return client.request(AccountNFTs(account=account, limit=150))
+    raise
 
 
 environ["XUMM_CREDS_PATH"] = "xumm_creds.json"
@@ -70,7 +71,7 @@ environ["XUMM_CREDS_PATH"] = "xumm_creds.json"
 
 @trade.route("/shop")
 @trade.route("/shop/<issuer>")
-@check_login
+@login_required
 def shop(issuer=None):
     info = None
     nfts = []
@@ -138,7 +139,7 @@ def make_buy_offer(the_wallet, offers):
     }
     buy = NFTokenCreateOffer.from_dict(purchase)
     return submit_xumm_transaction(
-        buy.to_xrpl(), user_token=session["user_token"]
+        buy.to_xrpl(), user_token=current_user.user_token
     ).json()
 
 
@@ -169,7 +170,7 @@ def accept_brokered_offer(offers, payload):
 
 @trade.route("/buy", methods=["POST", "GET"])
 @trade.route("/buy/<nft>", methods=["POST", "GET"])
-@check_login
+@login_required
 def buy(nft=None):
     if not nft:
         return redirect(url_for("trade.shop"))
@@ -181,7 +182,7 @@ def buy(nft=None):
         data = json.loads(request.json)
         return jsonify({"status": "ok"})
         # TODO: if the sale falls through, cancel the buy offer via NFTokenCancelOffer
-    the_wallet = session.get("user_wallet", False)
+    the_wallet = current_user.wallet.address
 
     confirmation = request.args.get("confirm", None)
     if confirmation:
@@ -219,7 +220,7 @@ def _flash_nft_sell_exists(nft, offers):
 
 @trade.route("/sell", methods=["POST", "GET"])
 @trade.route("/sell/<nft>", methods=["POST", "GET"])
-@check_login
+@login_required
 def sell(nft=None):
     """
     Create a sale offer (NFTokenCreateOffer), have the owner sign it & store
@@ -251,7 +252,7 @@ def sell(nft=None):
                 "sell.html", nft=request.form["tokenid"], cant_sell=True
             )
         token = TokenID.from_hex(request.form["tokenid"])
-        the_wallet = session.get("user_wallet", False)
+        the_wallet = current_user.wallet.address
         price = xrp_to_drops(float(request.form["price"]))
         # TODO: set expires
         sell = NFTokenCreateOffer(
@@ -261,7 +262,7 @@ def sell(nft=None):
             flags=[NFTokenCreateOfferFlag(1)],
         )
         # Call the XUM API to have the signing handled there
-        r = submit_xumm_transaction(sell.to_xrpl(), user_token=session["user_token"])
+        r = submit_xumm_transaction(sell.to_xrpl(), user_token=current_user.user_token)
         xumm_data = r.json()
         print(xumm_data)
 
@@ -294,7 +295,7 @@ def sell(nft=None):
 
 @trade.route("/sold", methods=["GET"])
 @trade.route("/sold/<nft>", methods=["GET"])
-@check_login
+@login_required
 def sold(nft=None):
     if nft:
         return render_template("sold.html", nft=nft)

@@ -1,27 +1,5 @@
 {% extends 'base.html' %}
 {%block title%}Welcome{%endblock%}
 {% block content %}
-<p>Please login with <a href="https://xumm.app/">XUMM</a></p>
-{% include '_qr.html' %}
-<p>More info about this app <a href="https://github.com/audiotarky/flask-nft-xumm/blob/main/README.md">can be found here</a></p>
-<script>
-    webSocket = new WebSocket("{{ws}}");
-    webSocket.onmessage = function (event) {
-        data = JSON.parse(event.data);
-        console.log(data);
-
-        if (data.payload_uuidv4 || false){
-            console.log('Signed in!')
-            fetch("/", {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(event.data)
-            })
-            .then(response => {
-                webSocket.close();
-                location.href = '/wallet'
-            })
-        }
-    }
-</script>
-{% endblock %}
+Please <a href="/login">login with your XUMM wallet.</a>
+{%endblock%}

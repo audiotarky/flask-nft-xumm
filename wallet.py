@@ -8,12 +8,12 @@ from collections import defaultdict
 
 from flask import (
     Blueprint,
+    current_app,
     flash,
     jsonify,
     redirect,
     render_template,
     request,
-    session,
     url_for,
 )
 from xrpl.account import get_account_info
@@ -23,16 +23,16 @@ from xrpl.models.transactions import Memo, NFTokenCancelOffer, NFTokenMint
 from xrpl.utils import drops_to_xrp, hex_to_str, str_to_hex
 from xrplpers.nfts.entities import TransferFee
 from xrplpers.xumm.transactions import submit_xumm_transaction
-
-from utils import check_login
+from requests import HTTPError
+from flask_login import login_required, current_user
 
 wallet = Blueprint("wallet", __name__)
 
 
 @wallet.route("/wallet")
-@check_login
+@login_required
 def index():
-    the_wallet = session.get("user_wallet", False)
+    the_wallet = current_user.wallet.address
     client = JsonRpcClient("http://xls20-sandbox.rippletest.net:51234")
     try:
         result = get_account_info(the_wallet, client).result
@@ -54,9 +54,9 @@ def index():
     offer_lookup = defaultdict(list)
     sql = "select token_id, sale_offer from stock where seller = ? and signed=1"
     for row in cur.execute(sql, [the_wallet]):
-        print(row)
+        current_app.logger.debug(row)
         offer_lookup[row[0]].append(row[1])
-    print(offer_lookup)
+    current_app.logger.debug(offer_lookup)
     con.close()
     for n in result["account_nfts"]:
         # We could look up offers here, but it's slow - round trip to the ledge for each NFT
@@ -75,13 +75,15 @@ def index():
 
 
 @wallet.route("/wallet/cancel/<offer>", methods=["GET", "POST"])
-@check_login
+@login_required
 def cancel(offer):
-    print("offer is", offer)
-    the_wallet = session.get("user_wallet", False)
+    current_app.logger.debug("offer is", offer)
+    the_wallet = current_user.wallet.address
     if request.method == "GET":
         cancel = NFTokenCancelOffer(account=the_wallet, token_offers=[offer])
-        r = submit_xumm_transaction(cancel.to_xrpl(), user_token=session["user_token"])
+        r = submit_xumm_transaction(
+            cancel.to_xrpl(), user_token=current_user.user_token
+        )
         xumm_data = r.json()
         return render_template(
             "cancel.html",
@@ -103,16 +105,15 @@ def cancel(offer):
 
 
 @wallet.route("/wallet/mint", methods=["GET", "POST"])
-@check_login
+@login_required
 def mint():
     if request.method == "GET":
         return render_template("minter.html")
     elif request.json:
-        print(request.json)
         return jsonify({"ok": True})
     else:
         # Call the XUM API to have the signing handled there
-        the_wallet = session.get("user_wallet", False)
+        the_wallet = current_user.wallet.address
         memoes = [Memo.from_dict({"memo_data": str_to_hex("Minted by Audiotarky")})]
         if "memo" in request.form and request.form["memo"]:
             memoes.append(
@@ -124,12 +125,19 @@ def mint():
             "uri": str_to_hex(request.form["uri"]),
             "memos": memoes,
             "transfer_fee": TransferFee.from_percent(int(request.form["fee"])).value,
-            "token_taxon": 0,
+            "nftoken_taxon": 0,
         }
         mint = NFTokenMint.from_dict(mint_args)
-        r = submit_xumm_transaction(mint.to_xrpl(), user_token=session["user_token"])
+        current_app.logger.debug(mint.to_xrpl())
+        try:
+            r = submit_xumm_transaction(
+                mint.to_xrpl(), user_token=current_user.user_token
+            )
+        except HTTPError as h:
+            current_app.logger.debug(h.response.text)
+            raise h
         xumm_data = r.json()
-        print(xumm_data)
+        current_app.logger.debug(xumm_data)
 
         return render_template(
             "minter.html",

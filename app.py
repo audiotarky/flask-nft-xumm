@@ -1,11 +1,14 @@
-import json
 import uuid
-from os import environ
+import logging
+from flask import Flask, redirect, render_template, url_for
 
-from flask import Flask, redirect, render_template, request, session, url_for
-from xrplpers.xumm.transactions import get_xumm_transaction, xumm_login
-
-from utils import check_login
+from flask_login import (
+    LoginManager,
+    login_required,
+    current_user,
+    logout_user,
+)
+from login import XUMMUser, login
 
 
 def create_app():
@@ -14,49 +17,50 @@ def create_app():
     app.secret_key = str(uuid.uuid1())
 
     from wallet import wallet as wallet_blueprint
+    from trade import trade as trade_blueprint
+    from nft import nft as nft_blueprint
 
     app.register_blueprint(wallet_blueprint)
-
-    from trade import trade as trade_blueprint
-
     app.register_blueprint(trade_blueprint)
+    app.register_blueprint(login, url_prefix="/login")
+    app.register_blueprint(nft_blueprint, url_prefix="/nft")
 
     return app
 
 
 app = create_app()
 
+login_manager = LoginManager()
+login_manager.init_app(app)
 
-environ["XUMM_CREDS_PATH"] = "xumm_creds.json"
+login_manager.login_view = "/login"
+login_manager.refresh_view = "/login"
+
+login_manager.needs_refresh_message = "Session timed out, please re-login"
+login_manager.needs_refresh_message_category = "info"
+
+login_manager.session_protection = "strong"
 
 
-@app.route("/", methods=["GET", "POST"])
+@login_manager.user_loader
+def load_user(user_id):
+    logging.debug(f"load_user: {user_id}")
+    return XUMMUser(user_id)
+
+
+@app.route("/")
 def index():
-    if request.method == "POST":
-        data = json.loads(request.json)
-        xumm_data = get_xumm_transaction(data["payload_uuidv4"])
-        session["user_token"] = xumm_data["application"]["issued_user_token"]
-        session["user_wallet"] = xumm_data["response"]["account"]
-        session.modified = True
-        return '{"ok": true}'
-    elif session.get("user_wallet", False):
-        return redirect(url_for("wallet.index"))
-    else:
-        r = xumm_login()
-        return render_template(
-            "index.html",
-            qr=r["refs"]["qr_png"],
-            url=r["next"]["always"],
-            ws=r["refs"]["websocket_status"],
-        )
+    logging.debug(f"index: {current_user} {current_user.get_id()}")
+    return render_template("index.html")
 
 
 @app.route("/logout")
-@check_login
+@login_required
 def logout():
-    session.clear()
+    logout_user()
     return redirect(url_for("index"))
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5050, debug=True)  # nosec
+    logging.basicConfig(level=logging.DEBUG)
+    app.run(port=5050, debug=True)  # nosec ssl_context="adhoc",
