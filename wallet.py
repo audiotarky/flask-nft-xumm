@@ -9,18 +9,12 @@ from collections import defaultdict
 from flask import (
     Blueprint,
     current_app,
-    flash,
     jsonify,
-    redirect,
     render_template,
     request,
-    url_for,
 )
-from xrpl.account import get_account_info
-from xrpl.clients import JsonRpcClient
-from xrpl.models.requests import AccountNFTs
 from xrpl.models.transactions import Memo, NFTokenCancelOffer, NFTokenMint
-from xrpl.utils import drops_to_xrp, hex_to_str, str_to_hex
+from xrpl.utils import hex_to_str, str_to_hex
 from xrplpers.nfts.entities import TransferFee
 from xrplpers.xumm.transactions import submit_xumm_transaction
 from requests import HTTPError
@@ -32,22 +26,14 @@ wallet = Blueprint("wallet", __name__)
 @wallet.route("/wallet")
 @login_required
 def index():
-    the_wallet = current_user.wallet.address
-    client = JsonRpcClient("http://xls20-sandbox.rippletest.net:51234")
-    try:
-        result = get_account_info(the_wallet, client).result
-    except:
-        flash("Could not find the wallet - not a test net account?")
-        return redirect(url_for("index"))
     info = {
-        "address": the_wallet,
-        "minted": result["account_data"].get("MintedTokens", 0),
-        "balance_xrp": str(drops_to_xrp(result["account_data"].get("Balance", 0))),
-        "balance_drops": result["account_data"].get("Balance", 0),
+        "address": current_user.wallet.address,
+        "minted": current_user.wallet.account_data.get("MintedNFTokens", 0),
+        "balance_xrp": current_user.wallet.balance,
+        "balance_drops": current_user.wallet.balance_drops,
     }
-
-    result = client.request(AccountNFTs(account=the_wallet, limit=150)).result
-    info["nft_count"] = len(result["account_nfts"])
+    the_wallet = current_user.wallet.address
+    info["nft_count"] = len(current_user.wallet.nfts)
     nfts = []
     con = sqlite3.connect("xumm.db")
     cur = con.cursor()
@@ -58,8 +44,9 @@ def index():
         offer_lookup[row[0]].append(row[1])
     current_app.logger.debug(offer_lookup)
     con.close()
-    for n in result["account_nfts"]:
-        # We could look up offers here, but it's slow - round trip to the ledge for each NFT
+    for n in current_user.wallet.nfts:
+        # We could look up offers here, but it's slow - round trip to the
+        # ledger for each NFT. If you need correctness, use the following:
         # offers = client.request(NFTSellOffers(tokenid=n["NFTokenID"])).result
         nfts.append(
             {

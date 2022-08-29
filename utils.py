@@ -5,7 +5,8 @@ from urllib.parse import urlparse, urljoin
 from flask import request
 
 from decorators import time_cache
-from xrpl.utils import hex_to_str
+from xrpl.account import get_account_info
+from xrpl.utils import drops_to_xrp, hex_to_str
 from xrpl.models.requests import AccountNFTs
 from xrpl.clients import JsonRpcClient
 
@@ -49,11 +50,38 @@ class XUMMWalletProxy:
         self.address = address
 
     @property
-    def nfts(self, as_string=False):
+    def balance(self):
+        return str(drops_to_xrp(self.account_data.get("Balance", 0)))
+
+    @property
+    def balance_drops(self):
+        return str(self.account_data.get("Balance", 0))
+
+    @property
+    def account_data(self):
+        return self._get_account_info()["account_data"]
+
+    @time_cache(60)
+    def _get_account_info(self, force=False):
+        """Retrieve the users wallet info, caching the result for 60 seconds.
+
+        Pass in a random value to force (or a value that hasn't been used in
+        the past 60s) to force a refresh of the cache. Useful after you make a
+        transaction that you know affects the wallets NFTs.
+        """
+        return get_account_info(self.address, client).result
+
+    @property
+    def nft_uris(self, as_string=False):
         data = self._get_wallet_nfts()
         if as_string:
             return [hex_to_str(nft["URI"]) for nft in data.result["account_nfts"]]
         return [nft["URI"] for nft in data.result["account_nfts"]]
+
+    @property
+    def nfts(self):
+        data = self._get_wallet_nfts()
+        return [nft for nft in data.result["account_nfts"]]
 
     @time_cache(60)
     def _get_wallet_nfts(self, force=False):

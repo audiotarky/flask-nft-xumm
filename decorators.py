@@ -1,14 +1,10 @@
 from flask import request
-from functools import wraps
 from flask_login import current_user
-
-import sqlite3
 from functools import wraps, lru_cache
 import time
-from flask import current_app, redirect, session, url_for
+
 from flask_login import current_user
-from xrpl.transaction import get_transaction_from_hash
-from xrpl.utils import drops_to_xrp, hex_to_str, str_to_hex
+from xrpl.utils import str_to_hex
 
 
 class NFTAccessDenied(Exception):
@@ -33,7 +29,7 @@ def nft_required(f):
         the_url = request.url
         hexed_url = str_to_hex(the_url).upper()
 
-        if hexed_url not in current_user.wallet.nfts:
+        if hexed_url not in current_user.wallet.nft_uris:
             raise NFTAccessDenied("You do not own the NFT at this URL")
 
         return f(*args, **kwargs)
