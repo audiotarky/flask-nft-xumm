@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Wallet{% endblock %}
+{% block content %}
+
+{% for n in nfts %}
+<div class="nft_listing">
+    {{nft}}
+</div>
+{% endfor %}
+{% endblock %}

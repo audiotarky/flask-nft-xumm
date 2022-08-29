@@ -35,6 +35,7 @@ def index():
         # We could look up offers here, but it's slow - round trip to the
         # ledger for each NFT. If you need correctness, use the following:
         # offers = client.request(NFTSellOffers(tokenid=n["NFTokenID"])).result
+        current_app.logger.debug(n)
         nfts.append(
             {
                 "issuer": n["Issuer"],
@@ -46,6 +47,13 @@ def index():
             }
         )
     return render_template("wallet.html", nfts=nfts)
+
+
+@wallet.route("/wallet/details/<nft_id>")
+@login_required
+def details(nft_id):
+    nft = {}
+    return render_template("details.html", nft=nft)
 
 
 @wallet.route("/wallet/cancel/<offer>", methods=["GET", "POST"])
