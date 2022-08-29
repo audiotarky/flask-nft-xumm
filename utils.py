@@ -2,7 +2,7 @@ import sqlite3
 from os import environ
 from urllib.parse import urljoin, urlparse
 
-from flask import request
+from flask import current_app, request
 from xrpl.account import get_account_info
 from xrpl.clients import JsonRpcClient
 from xrpl.models.requests import AccountNFTs

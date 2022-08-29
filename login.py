@@ -11,19 +11,15 @@ from flask import (
 )
 from flask_login import UserMixin, current_user, login_user
 from xrplpers.xumm.transactions import get_xumm_transaction, xumm_login
-
 from utils import XUMMWalletProxy, is_safe_url
 
 login = Blueprint("xumm", __name__)
 
 
-wallet_cache = {}
-
-
 class XUMMUser(UserMixin):
     def __init__(self, login, **kwargs):
         self.user_token = login
-        self.wallet = XUMMWalletProxy(kwargs.get("account", wallet_cache[login]))
+        self.wallet = XUMMWalletProxy(kwargs["account"])
 
     def get_id(self):
         current_app.logger.debug(f"XUMMUser.get_id: {self.user_token}")
@@ -36,7 +32,6 @@ def index():
         data = json.loads(request.json)
         xumm_data = get_xumm_transaction(data["payload_uuidv4"])
         user_id = xumm_data["application"]["issued_user_token"]
-        wallet_cache[user_id] = xumm_data["response"]["account"]
         user = XUMMUser(
             user_id,
             **xumm_data["response"],

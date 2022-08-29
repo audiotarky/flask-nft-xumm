@@ -1,9 +1,10 @@
 import logging
+import sqlite3
 import uuid
 
-from flask import Flask, redirect, render_template, url_for
+from flask import Flask, current_app, redirect, render_template, url_for
 from flask_login import LoginManager, current_user, login_required, logout_user
-
+from flask_login.signals import user_logged_in
 from login import XUMMUser, login
 
 
@@ -38,10 +39,43 @@ login_manager.needs_refresh_message_category = "info"
 login_manager.session_protection = "strong"
 
 
+def wallet_cache_put(key, value):
+    current_app.logger.debug(f"wallet_cache_put: {key}: {value}")
+    con = sqlite3.connect("xumm.db")
+    with con:
+        sql = "insert or ignore into wallet_cache (user_token, wallet_address) values (?, ?)"
+        con.execute(sql, [key, value])
+    con.close()
+
+
+def wallet_cache_get(key):
+    current_app.logger.debug(f"wallet_cache_get: {key}")
+    con = sqlite3.connect("xumm.db")
+    cur = con.cursor()
+    sql = "select wallet_address from wallet_cache where user_token = ?"
+    result = cur.execute(sql, [key]).fetchone()
+    con.close()
+    current_app.logger.debug(f"wallet_cache_get result: {result}")
+    if not result:
+        raise KeyError(f"{key} not found in cache")
+    return result[0]
+
+
+@user_logged_in.connect_via(app)
+def when_user_logged_in(sender, user, **extra):
+    """
+    Listen to this signal to write the logged in user to the cache, to support
+    remember me and other flask-loging features.
+    """
+    wallet_cache_put(user.user_token, user.wallet.address)
+
+
 @login_manager.user_loader
 def load_user(user_id):
     logging.debug(f"load_user: {user_id}")
-    return XUMMUser(user_id)
+    wallet = wallet_cache_get(user_id)
+    current_app.logger.debug(f"{user_id, wallet}")
+    return XUMMUser(user_id, account=wallet)
 
 
 @app.route("/")
