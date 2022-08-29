@@ -25,10 +25,7 @@ class NFTAccessDenied(Exception):
 def nft_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        the_url = request.url
-        hexed_url = str_to_hex(the_url).upper()
-
-        if hexed_url not in current_user.wallet.nft_uris:
+        if not current_user.wallet.has_nft(uri=request.url):
             raise NFTAccessDenied("You do not own the NFT at this URL")
 
         return f(*args, **kwargs)

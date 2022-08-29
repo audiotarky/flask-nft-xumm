@@ -7,7 +7,7 @@ from xrpl.account import get_account_info
 from xrpl.clients import JsonRpcClient
 from xrpl.models.requests import AccountNFTs
 from xrpl.transaction import get_transaction_from_hash
-from xrpl.utils import drops_to_xrp, hex_to_str
+from xrpl.utils import drops_to_xrp, hex_to_str, str_to_hex
 
 from decorators import time_cache
 
@@ -72,12 +72,18 @@ class XUMMWalletProxy:
         """
         return get_account_info(self.address, client).result
 
+    def has_nft(self, uri=None, hexed_uri=None, id=None):
+        if id:
+            return id in [nft["NFTokenID"] for nft in self.nfts]
+        if uri:
+            hexed_uri = str_to_hex(uri).upper()
+        return hexed_uri in self.nft_uris
+
     @property
     def nft_uris(self, as_string=False):
-        data = self._get_wallet_nfts()
         if as_string:
-            return [hex_to_str(nft["URI"]) for nft in data.result["account_nfts"]]
-        return [nft["URI"] for nft in data.result["account_nfts"]]
+            return [hex_to_str(nft["URI"]) for nft in self.nfts]
+        return [nft["URI"] for nft in self.nfts]
 
     @property
     def nfts(self):
