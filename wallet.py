@@ -20,24 +20,17 @@ wallet = Blueprint("wallet", __name__)
 @wallet.route("/wallet")
 @login_required
 def index():
-    info = {
-        "address": current_user.wallet.address,
-        "minted": current_user.wallet.account_data.get("MintedNFTokens", 0),
-        "balance_xrp": current_user.wallet.balance,
-        "balance_drops": current_user.wallet.balance_drops,
-    }
-    the_wallet = current_user.wallet.address
-    info["nft_count"] = len(current_user.wallet.nfts)
-    nfts = []
+    offer_lookup = defaultdict(list)
     con = sqlite3.connect("xumm.db")
     cur = con.cursor()
-    offer_lookup = defaultdict(list)
     sql = "select token_id, sale_offer from stock where seller = ? and signed=1"
-    for row in cur.execute(sql, [the_wallet]):
+    for row in cur.execute(sql, [current_user.wallet.address]):
         current_app.logger.debug(row)
         offer_lookup[row[0]].append(row[1])
     current_app.logger.debug(offer_lookup)
     con.close()
+
+    nfts = []
     for n in current_user.wallet.nfts:
         # We could look up offers here, but it's slow - round trip to the
         # ledger for each NFT. If you need correctness, use the following:
@@ -52,7 +45,7 @@ def index():
                 "offers": offer_lookup.get(n["NFTokenID"], []),
             }
         )
-    return render_template("wallet.html", info=info, nfts=nfts)
+    return render_template("wallet.html", nfts=nfts)
 
 
 @wallet.route("/wallet/cancel/<offer>", methods=["GET", "POST"])

@@ -2,10 +2,16 @@
 {% block title %}Wallet{% endblock %}
 {% block content %}
 
-<label>Wallet {{info['address']}} owns {{info['nft_count']}} and has minted {{info['minted']}} nfts. It currently has a
-    balance of {{info['balance_xrp']}}XRP</label>
+<label>
+    Wallet {{current_user.wallet.address}} owns
+    {{current_user.wallet.nfts|length}} and has minted
+    {{current_user.wallet.account_data.get("MintedNFTokens", 0)}}
+    nfts. It currently has a balance of
+    {{current_user.wallet.balance}}XRP.</label>
 
-<img src="https://xumm.app/avatar/{{info['address']}}.png" />
+<a href="https://xls20.bithomp.com/explorer/{{current_user.wallet.account_data['PreviousTxnID']}}">Last transaction by
+    account</a>
+<img src="https://xumm.app/avatar/{{current_user.wallet.address}}.png" />
 
 <button class="btn"><a href="{{ url_for('wallet.mint') }}">Submit an NFT</a></button>
 
