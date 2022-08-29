@@ -6,19 +6,13 @@ GET /wallet - lists all NFTs owned by the logged in user
 import sqlite3
 from collections import defaultdict
 
-from flask import (
-    Blueprint,
-    current_app,
-    jsonify,
-    render_template,
-    request,
-)
+from flask import Blueprint, current_app, jsonify, render_template, request
+from flask_login import current_user, login_required
+from requests import HTTPError
 from xrpl.models.transactions import Memo, NFTokenCancelOffer, NFTokenMint
 from xrpl.utils import hex_to_str, str_to_hex
 from xrplpers.nfts.entities import TransferFee
 from xrplpers.xumm.transactions import submit_xumm_transaction
-from requests import HTTPError
-from flask_login import login_required, current_user
 
 wallet = Blueprint("wallet", __name__)
 

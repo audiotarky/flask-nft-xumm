@@ -1,9 +1,7 @@
 from flask import Blueprint, current_app
-
-from flask_login import login_required, current_user
+from flask_login import current_user, login_required
 
 from decorators import nft_required
-
 
 nft = Blueprint("nft", __name__)
 

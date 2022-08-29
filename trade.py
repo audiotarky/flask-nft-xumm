@@ -51,7 +51,6 @@ from xrplpers.xumm.transactions import get_xumm_transaction, submit_xumm_transac
 
 from utils import cache_offer_to_db, offer_id_from_transaction_hash
 
-
 trade = Blueprint("trade", __name__)
 ledger_url = "http://xls20-sandbox.rippletest.net:51234"
 client = JsonRpcClient(ledger_url)

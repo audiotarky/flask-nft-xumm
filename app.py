@@ -1,13 +1,9 @@
-import uuid
 import logging
-from flask import Flask, redirect, render_template, url_for
+import uuid
 
-from flask_login import (
-    LoginManager,
-    login_required,
-    current_user,
-    logout_user,
-)
+from flask import Flask, redirect, render_template, url_for
+from flask_login import LoginManager, current_user, login_required, logout_user
+
 from login import XUMMUser, login
 
 
@@ -16,9 +12,9 @@ def create_app():
     app.config.from_object(__name__)
     app.secret_key = str(uuid.uuid1())
 
-    from wallet import wallet as wallet_blueprint
-    from trade import trade as trade_blueprint
     from nft import nft as nft_blueprint
+    from trade import trade as trade_blueprint
+    from wallet import wallet as wallet_blueprint
 
     app.register_blueprint(wallet_blueprint)
     app.register_blueprint(trade_blueprint)

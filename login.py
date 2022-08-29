@@ -1,8 +1,8 @@
 import json
 
 from flask import (
-    abort,
     Blueprint,
+    abort,
     current_app,
     redirect,
     render_template,
@@ -11,7 +11,8 @@ from flask import (
 )
 from flask_login import UserMixin, current_user, login_user
 from xrplpers.xumm.transactions import get_xumm_transaction, xumm_login
-from utils import is_safe_url, XUMMWalletProxy
+
+from utils import XUMMWalletProxy, is_safe_url
 
 login = Blueprint("xumm", __name__)
 
