@@ -12,7 +12,7 @@ Flask==2.0.2
 Flask-Login==0.6.2
 h11==0.12.0
 httpcore==0.13.7
-httpx==0.18.2
+httpx==0.23.0
 idna==3.3
 isort==5.10.1
 itsdangerous==2.0.1
