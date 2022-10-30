@@ -23,7 +23,15 @@
                 .then( response =>
                 {
                     webSocket.close();
-                    location.href = '/wallet'
+                    let params = ( new URL( document.location ) ).searchParams;
+                    let next = params.get( "next" );
+                    if ( next )
+                    {
+                        location.href = next
+                    } else
+                    {
+                        location.href = next || '/wallet'
+                    }
                 } )
         }
     }

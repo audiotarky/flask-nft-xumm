@@ -2,7 +2,12 @@
 
 {% block title %}
 {% if confirmation %}
-Sale complete!
+Transaction complete
+{% if sale.result.meta.TransactionResult == 'tesSUCCESS' %}
+- your purchase was successful!</p>
+{% else %}
+- your offer was declined.
+{% endif %}
 {% else %}
 Buy
 {% endif %}
@@ -10,11 +15,14 @@ Buy
 
 {% block content %}
 {% if confirmation %}
-<p>Sale complete!</p>
 <div class="nft_listing">
-<p>Your buy offer {{sale.result['BuyOffer']}} was successful!</p>
-
-<p><a href="https://xls20.bithomp.com/explorer/{{sale.result['hash']}}">Examine transaction</a></p>
+    {% if sale.result.meta.TransactionResult == 'tesSUCCESS' %}
+    <p>Your purchase {{sale.result['BuyOffer']}} was successful!</p>
+    {% else %}
+    <p>Unfortunatley your offer {{sale.result['BuyOffer']}} was declined -
+        {{sale.result.meta.TransactionResult}}</p>
+    {% endif %}
+    <p><a href="https://xls20.bithomp.com/explorer/{{sale.result['hash']}}">Examine transaction</a></p>
 </div>
 <div class="nft_listing">
     <code>
@@ -29,13 +37,15 @@ Buy
 
 {% include '_qr.html' %}
 <script>
-    webSocket = new WebSocket("{{ws}}");
-    webSocket.onmessage = function (event) {
-        data = JSON.parse(event.data);
-        console.log(data);
-        if (data.payload_uuidv4 || false){
+    webSocket = new WebSocket( "{{ws}}" );
+    webSocket.onmessage = function ( event )
+    {
+        data = JSON.parse( event.data );
+        console.log( data );
+        if ( data.payload_uuidv4 || false )
+        {
             webSocket.close();
-            location.href = '/buy/{{nft}}?confirm='+data.payload_uuidv4
+            location.href = '/buy/{{nft}}?confirm=' + data.payload_uuidv4
         }
     }
 </script>

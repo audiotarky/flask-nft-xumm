@@ -54,7 +54,7 @@ def cancel(offer):
     current_app.logger.debug("offer is", offer)
     the_wallet = current_user.wallet.address
     if request.method == "GET":
-        cancel = NFTokenCancelOffer(account=the_wallet, token_offers=[offer])
+        cancel = NFTokenCancelOffer(account=the_wallet, nftoken_offers=[offer])
         r = submit_xumm_transaction(
             cancel.to_xrpl(), user_token=current_user.user_token
         )

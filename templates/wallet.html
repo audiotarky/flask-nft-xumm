@@ -22,13 +22,13 @@
     </div>
     <div>
         <p>Token {{n["id"]}} was issued by <a href="/shop/{{n[" issuer"]}}">{{n["issuer"]}}</a> and points to <a
-                href="{{n['uri']}}">{{n["uri"]}}</a>. It has a serial of {{n['serial']}}.</p>
-        <p>The creator gets {{ n["fee"] / 1000}}% of any future sales.</p>
+                href="{{n['uri']}}">{{n["uri"]}}</a>. It has a serial of {{n['serial']}}.</p><br />
+        <p>The creator gets {{ n["fee"] / 1000}}% of any future sales.</p><br />
         {% if n['offers']|length == 0 %}
-        <p><a href="/sell/{{n[" id"]}}">Put up for sale</a></p>
+        <p><a href="{{ url_for('trade.sell', nft=n['id'])}}">Put up for sale</a></p>
         {% else %}
         {% for offer in n['offers'] %}
-        <p>Sell offer open <a href="/wallet/cancel/{{offer}}">click to cancel</a></p>
+        <p>Sell offer open <a href="{{ url_for('wallet.cancel', offer=offer)}}">click to cancel</a></p>
         {% endfor %}
         {% endif %}
     </div>
