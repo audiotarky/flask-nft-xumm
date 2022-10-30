@@ -104,13 +104,13 @@ def mint():
         mint = NFTokenMint.from_dict(mint_args)
         current_app.logger.debug(mint.to_xrpl())
         try:
-            r = submit_xumm_transaction(
+            xumm_data = submit_xumm_transaction(
                 mint.to_xrpl(), user_token=current_user.user_token
             )
         except HTTPError as h:
             current_app.logger.debug(h.response.text)
             raise h
-        xumm_data = r.json()
+
         current_app.logger.debug(xumm_data)
 
         return render_template(

@@ -7,6 +7,7 @@ cffi==1.15.1
 charset-normalizer==2.0.10
 click==8.0.3
 cryptography==37.0.4
+Deprecated==1.2.13
 ECPy==1.2.5
 Flask==2.0.2
 Flask-Login==0.6.2
@@ -27,9 +28,11 @@ requests==2.27.1
 rfc3986==1.5.0
 sniffio==1.2.0
 tomli==2.0.0
-typing-extensions==3.10.0.2
+types-Deprecated==1.2.9
+typing_extensions==4.4.0
 urllib3==1.26.8
 websockets==10.1
 Werkzeug==2.0.2
-xrpl-py==1.6.0
+wrapt==1.14.1
+xrpl-py==1.7.0
 xrplpers==0.0.3
