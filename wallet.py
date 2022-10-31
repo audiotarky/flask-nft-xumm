@@ -59,6 +59,7 @@ def index():
 def details(nft_id):
     n = TokenID.from_hex(nft_id)
     nft = {"n": n, "details": []}
+    current_app.xrpl_client.open()
     sales = current_app.xrpl_client.request(NFTSellOffers(nft_id=nft_id)).result
     bitthomp = requests.get(
         "https://bithomp.com/api/v2/nft/",

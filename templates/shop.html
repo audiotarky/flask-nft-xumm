@@ -9,9 +9,21 @@
 {% for n in nfts %}
 
 <div>
-    <p>{{n["owner"]}} is selling token {{n["id"]}} for {{'%0.2f'| format(drops_to_xrp(n["offer"]['amount']))}}XRP. It was issued by <a href="/shop/{{n["issuer"]}}">{{n["issuer"]}}</a> and points to <a href="{{n["uri"]}}">{{n["uri"]}}</a>. It has a serial of {{n['serial']}}.</p>
-    <p><a href="/buy/{{n["id"]}}">Buy!</a> The creator gets {{ n["fee"].as_percent() }}% of any future sales.</p>
+    <p>{{n["owner"]}} is selling token {{n["id"]}} for {{'%0.2f'| format(drops_to_xrp(n["offer"]['amount']))}}XRP. It
+        was issued by <a href="/shop/{{n['issuer']}}">{{n['issuer']}}</a> and points to <a
+            href="{{n['uri']}}">{{n['uri']}}</a>. It has a serial of {{n['serial']}}.</p>
+    {% if current_user.is_authenticated and current_user.wallet.address == n["owner"]%}
+    <p>You own this NFT already.</p>
+    {% else %}
+    <p><a href="/buy/{{n['id']}}">Buy!</a> The creator gets {{ n['fee'].as_percent() }}% of any future sales.</p>
+    {% endif %}
     <p>---</p>
 </div>
 {% endfor %}
+{% if nfts|length == 0 %}
+No NFTs
+{% if issuer %} from {{issuer}}{% endif %}
+available at the moment.
+{% if issuer %} <a href="{{ url_for('trade.shop') }}">See other issuers</a>{% endif %}
+{% endif %}
 {% endblock %}

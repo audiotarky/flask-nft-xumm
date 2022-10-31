@@ -12,7 +12,6 @@ else:
 
 from flask import current_app, request
 from xrpl.account import get_account_info
-from xrpl.clients import JsonRpcClient
 from xrpl.models.requests import AccountNFTs
 from xrpl.transaction import get_transaction_from_hash
 from xrpl.utils import drops_to_xrp, hex_to_str, str_to_hex
@@ -20,9 +19,6 @@ from xrpl.utils import drops_to_xrp, hex_to_str, str_to_hex
 from decorators import time_cache
 
 environ["XUMM_CREDS_PATH"] = "xumm_creds.json"
-
-ledger_url = "http://xls20-sandbox.rippletest.net:51234"
-client = JsonRpcClient(ledger_url)
 
 
 @cache
@@ -84,7 +80,9 @@ class XUMMWalletProxy:
         the past 60s) to force a refresh of the cache. Useful after you make a
         transaction that you know affects the wallets NFTs.
         """
-        return get_account_info(self.address, client).result
+        with current_app.app_context():
+            current_app.xrpl_client.open()
+            return get_account_info(self.address, current_app.xrpl_client).result
 
     def has_nft(self, uri=None, hexed_uri=None, id=None):
         if id:
@@ -102,7 +100,7 @@ class XUMMWalletProxy:
     @property
     def nfts(self):
         data = self._get_wallet_nfts()
-        return [nft for nft in data.result["account_nfts"]]
+        return [nft for nft in data.result.get("account_nfts", [])]
 
     @time_cache(60)
     def _get_wallet_nfts(self, force=False):
@@ -113,4 +111,8 @@ class XUMMWalletProxy:
         the past 60s) to force a refresh of the cache. Useful after you make a
         transaction that you know affects the wallets NFTs.
         """
-        return client.request(AccountNFTs(account=self.address, limit=150))
+        with current_app.app_context():
+            current_app.xrpl_client.open()
+            return current_app.xrpl_client.request(
+                AccountNFTs(account=self.address, limit=150)
+            )

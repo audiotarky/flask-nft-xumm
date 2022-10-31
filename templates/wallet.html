@@ -29,7 +29,7 @@
         <p><a href="{{ url_for('trade.sell', nft=n['id'])}}">Put up for sale</a></p>
         {% else %}
         {% for offer in n['offers'] %}
-        <p>Sell offer open <a href="{{ url_for('wallet.cancel', offer=offer)}}">click to cancel</a></p>
+        <p>Sell offer open <a href="{{ url_for('wallet.cancel', offer=offer)}}">click to cancel</a> {{offer}}</p>
         {% endfor %}
         {% endif %}
     </div>

@@ -9,7 +9,7 @@ from flask import Flask, current_app, redirect, render_template, url_for
 from flask_login import LoginManager, current_user, login_required, logout_user
 from flask_login.signals import user_logged_in
 from login import XUMMUser, login
-from xrpl.clients import JsonRpcClient
+from xrpl.clients import JsonRpcClient, WebsocketClient
 from xrpl.wallet import Wallet
 
 
@@ -17,8 +17,9 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(__name__)
     app.secret_key = str(uuid.uuid1())
-    ledger_url = "http://xls20-sandbox.rippletest.net:51234"
-    app.xrpl_client = JsonRpcClient(ledger_url)
+    app.config.ledger_url = "wss://xrplcluster.com"
+    app.xrpl_client = WebsocketClient(app.config.ledger_url)
+
     from nft import nft as nft_blueprint
     from trade import trade as trade_blueprint
     from wallet import wallet as wallet_blueprint
@@ -53,8 +54,9 @@ def wallet_cache_put(key, value):
     current_app.logger.debug(f"wallet_cache_put: {key}: {value}")
     con = sqlite3.connect("xumm.db")
     with con:
-        sql = "insert or ignore into wallet_cache (user_token, wallet_address) values (?, ?)"
-        con.execute(sql, [key, value])
+        sql = "insert into wallet_cache (user_token, wallet_address) values (:user_token, :wallet_address)"
+        sql += "ON CONFLICT(user_token) DO UPDATE SET wallet_address=:wallet_address"
+        con.execute(sql, {"user_token": key, "wallet_address": value})
     con.close()
 
 

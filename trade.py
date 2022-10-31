@@ -53,8 +53,8 @@ trade = Blueprint("trade", __name__)
 environ["XUMM_CREDS_PATH"] = "xumm_creds.json"
 
 
-@trade.route("/shop")
 @trade.route("/shop/<issuer>")
+@trade.route("/shop")
 # @login_required
 def shop(issuer=None):
     info = None
@@ -62,7 +62,9 @@ def shop(issuer=None):
     con = sqlite3.connect("xumm.db")
     cur = con.cursor()
     sql = "select token_id, sale_offer, seller from stock where signed = 1"
-
+    if issuer:
+        sql += f" and seller='{issuer}'"
+    current_app.xrpl_client.open()
     for row in cur.execute(sql):
         t = TokenID.from_hex(row[0])
         # TODO: narrow the search over NFTokenPage
@@ -92,10 +94,7 @@ def shop(issuer=None):
                     )
     con.close()
     return render_template(
-        "shop.html",
-        info=info,
-        nfts=nfts,
-        drops_to_xrp=drops_to_xrp,
+        "shop.html", info=info, nfts=nfts, drops_to_xrp=drops_to_xrp, issuer=issuer
     )
 
 
@@ -127,6 +126,7 @@ def accept_brokered_offer(offers, payload):
     nft = xumm_data["buy"]["payload"]["request_json"]["NFTokenID"]
     ammount = int(xumm_data["sell"]["amount"])
     broker_fee = calculate_broker_fee(ammount)
+    current_app.xrpl_client.open()
     purchase = {
         "account": current_app.creds["address"],
         "nftoken_broker_fee": broker_fee,
@@ -165,9 +165,12 @@ def accept_brokered_offer(offers, payload):
 @trade.route("/buy/<nft>", methods=["POST", "GET"])
 @login_required
 def buy(nft=None):
+    # TODO: Check the buyer != seller
     if not nft:
         return redirect(url_for("trade.shop"))
+    current_app.xrpl_client.open()
     offers = current_app.xrpl_client.request(NFTSellOffers(nft_id=nft)).result
+
     if not offers.get("offers", False):
         flash("No sell offers available")
         return redirect(url_for("trade.shop"))
@@ -176,6 +179,10 @@ def buy(nft=None):
         return jsonify({"status": "ok"})
         # TODO: if the sale falls through, cancel the buy offer via NFTokenCancelOffer
     the_wallet = current_user.wallet.address
+
+    if the_wallet == offers["offers"][-1]["owner"]:
+        flash(f"You already own this NFT - {offers['nft_id']}")
+        return redirect(url_for("trade.shop"))
 
     confirmation = request.args.get("confirm", None)
     if confirmation:
@@ -219,6 +226,7 @@ def sell(nft=None):
     Create a sale offer (NFTokenCreateOffer), have the owner sign it & store
     the transaction id to the database.
     """
+    current_app.xrpl_client.open()
     if request.method == "POST" and nft:
         # Store the Sell offer transaction id
         con = sqlite3.connect("xumm.db")
