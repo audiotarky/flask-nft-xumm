@@ -1,6 +1,14 @@
 import sqlite3
+import sys
 from os import environ
 from urllib.parse import urljoin, urlparse
+
+
+py_version = sys.version_info
+if py_version.major == 3 and py_version.minor >= 9:
+    from functools import cache
+else:
+    from functools import lru_cache as cache
 
 from flask import current_app, request
 from xrpl.account import get_account_info
@@ -15,6 +23,12 @@ environ["XUMM_CREDS_PATH"] = "xumm_creds.json"
 
 ledger_url = "http://xls20-sandbox.rippletest.net:51234"
 client = JsonRpcClient(ledger_url)
+
+
+@cache
+def get_nft_list_for_account(account):
+    p = XUMMWalletProxy(account)
+    return p.nfts
 
 
 def offer_id_from_transaction_hash(txn_hash, client):

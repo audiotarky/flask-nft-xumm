@@ -10,13 +10,6 @@ GET /sell/$NFT - put the NFT up for sale
 """
 import json
 import sqlite3
-import sys
-
-py_version = sys.version_info
-if py_version.major == 3 and py_version.minor >= 9:
-    from functools import cache
-else:
-    from functools import lru_cache as cache
 
 from os import environ
 from pathlib import Path
@@ -24,6 +17,7 @@ from pathlib import Path
 from flask import (
     Blueprint,
     Markup,
+    current_app,
     flash,
     jsonify,
     redirect,
@@ -33,7 +27,7 @@ from flask import (
 )
 from flask_login import current_user, login_required
 from requests import HTTPError
-from xrpl.clients import JsonRpcClient
+
 from xrpl.models.requests import AccountNFTs, NFTSellOffers
 from xrpl.models.transactions import (
     NFTokenAcceptOffer,
@@ -45,26 +39,17 @@ from xrpl.transaction import (
     send_reliable_submission,
 )
 from xrpl.utils import drops_to_xrp, hex_to_str, xrp_to_drops
-from xrpl.wallet import Wallet
+
 from xrplpers.nfts.entities import TokenID
 from xrplpers.xumm.transactions import get_xumm_transaction, submit_xumm_transaction
 
-from utils import cache_offer_to_db, offer_id_from_transaction_hash, XUMMWalletProxy
+from utils import (
+    cache_offer_to_db,
+    get_nft_list_for_account,
+    offer_id_from_transaction_hash,
+)
 
 trade = Blueprint("trade", __name__)
-ledger_url = "http://xls20-sandbox.rippletest.net:51234"
-client = JsonRpcClient(ledger_url)
-environ["XUMM_CREDS_PATH"] = "xumm_creds.json"
-creds = json.loads(Path("creds.json").read_text())
-marketplace_wallet = Wallet(seed=creds["secret"], sequence=creds["sequence"])
-
-
-@cache
-def get_nft_list_for_account(account):
-    p = XUMMWalletProxy(account)
-    return p.nfts
-
-
 environ["XUMM_CREDS_PATH"] = "xumm_creds.json"
 
 
@@ -85,7 +70,9 @@ def shop(issuer=None):
         # TODO: Cross reference against all sell offers for a token
         # https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.requests.html?highlight=NFToken#xrpl.models.requests.NFTSellOffers.tokenid
 
-        offers = client.request(NFTSellOffers(nft_id=t.to_str())).result
+        offers = current_app.xrpl_client.request(
+            NFTSellOffers(nft_id=t.to_str())
+        ).result
         result = get_nft_list_for_account(row[2])
         for n in offers.get("offers", []):
             details = [x for x in result if x["NFTokenID"] == t.to_str()]
@@ -131,9 +118,7 @@ def make_buy_offer(the_wallet, offers):
         "nftoken_id": offers["nft_id"],
     }
     buy = NFTokenCreateOffer.from_dict(purchase)
-    return submit_xumm_transaction(
-        buy.to_xrpl(), user_token=current_user.user_token
-    ).json()
+    return submit_xumm_transaction(buy.to_xrpl(), user_token=current_user.user_token)
 
 
 def accept_brokered_offer(offers, payload):
@@ -143,14 +128,14 @@ def accept_brokered_offer(offers, payload):
     ammount = int(xumm_data["sell"]["amount"])
     broker_fee = calculate_broker_fee(ammount)
     purchase = {
-        "account": creds["address"],
+        "account": current_app.creds["address"],
         "nftoken_broker_fee": broker_fee,
         "nftoken_buy_offer": offer_id_from_transaction_hash(
-            xumm_data["buy"]["response"]["txid"], client
+            xumm_data["buy"]["response"]["txid"], current_app.xrpl_client
         ),
     }
 
-    sells = client.request(NFTSellOffers(nft_id=nft)).result["offers"]
+    sells = current_app.xrpl_client.request(NFTSellOffers(nft_id=nft)).result["offers"]
 
     print("ammount is", ammount)
     print("purchase is", purchase)
@@ -169,8 +154,10 @@ def accept_brokered_offer(offers, payload):
     accept = NFTokenAcceptOffer.from_dict(purchase)
     accept.validate()
 
-    purchase = safe_sign_and_autofill_transaction(accept, marketplace_wallet, client)
-    purchase_txn = send_reliable_submission(purchase, client)
+    purchase = safe_sign_and_autofill_transaction(
+        accept, current_app.marketplace_wallet, current_app.xrpl_client
+    )
+    purchase_txn = send_reliable_submission(purchase, current_app.xrpl_client)
     return purchase_txn
 
 
@@ -180,7 +167,7 @@ def accept_brokered_offer(offers, payload):
 def buy(nft=None):
     if not nft:
         return redirect(url_for("trade.shop"))
-    offers = client.request(NFTSellOffers(nft_id=nft)).result
+    offers = current_app.xrpl_client.request(NFTSellOffers(nft_id=nft)).result
     if not offers.get("offers", False):
         flash("No sell offers available")
         return redirect(url_for("trade.shop"))
@@ -238,7 +225,7 @@ def sell(nft=None):
         cur = con.cursor()
         sell_offer = get_xumm_transaction(json.loads(request.json)["payload_uuidv4"])
         txn = sell_offer["response"]["txid"]
-        offer_id = offer_id_from_transaction_hash(txn, client)
+        offer_id = offer_id_from_transaction_hash(txn, current_app.xrpl_client)
 
         cur.execute(
             "update stock set signed = 1, sale_offer = ? where sale_offer = ?",
@@ -249,7 +236,9 @@ def sell(nft=None):
         return jsonify({"ok": True})
     elif request.method == "POST":
         # Create the sale offer, and have XUMM generate the QR to let the seller sign it
-        offers = client.request(NFTSellOffers(nft_id=request.form["tokenid"])).result
+        offers = current_app.xrpl_client.request(
+            NFTSellOffers(nft_id=request.form["tokenid"])
+        ).result
         if len(offers.get("offers", [])) > 0:
             _flash_nft_sell_exists(request.form["tokenid"], offers)
 
@@ -267,8 +256,9 @@ def sell(nft=None):
             flags=[NFTokenCreateOfferFlag(1)],
         )
         # Call the XUMM API to have the signing handled there
-        r = submit_xumm_transaction(sell.to_xrpl(), user_token=current_user.user_token)
-        xumm_data = r.json()
+        xumm_data = submit_xumm_transaction(
+            sell.to_xrpl(), user_token=current_user.user_token
+        )
 
         cache_offer_to_db(token.to_str(), xumm_data["uuid"], 0, the_wallet)
 
@@ -288,7 +278,7 @@ def sell(nft=None):
     else:
         # Render the form to list the specified NFT
         token = TokenID.from_hex(nft)
-        offers = client.request(NFTSellOffers(nft_id=nft)).result
+        offers = current_app.xrpl_client.request(NFTSellOffers(nft_id=nft)).result
         cant_sell = False
         if len(offers.get("offers", [])) > 0:
             # TODO: add the sale offer to the DB if not in it already

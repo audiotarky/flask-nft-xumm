@@ -2,9 +2,26 @@
 {% block title %}Wallet{% endblock %}
 {% block content %}
 
-{% for n in nfts %}
 <div class="nft_listing">
-    {{nft}}
+    <ul>
+        <li>{{ sales.nft_id }}</li>
+        <li>{{ nft.n.flags }}</li>
+        <li>{{ nft.n.transfer_fee }}</li>
+        <li>{{ nft.n.issuer }}</li>
+        <li>{{ nft.n.taxon }}</li>
+        <li>{{ nft.details }}</li>
+        <li>{{ nft.n.sequence }}</li>
+        <li>{{ nft.uri }}</li>
+        <li>{{ bitthomp }}</li>
+
+        <li>Sell offers:
+            <ul>
+                {% for sale in sales.offers %}
+                <li>{{sale}}</li>
+                {% endfor %}
+            </ul>
+        </li>
+    </ul>
 </div>
-{% endfor %}
+
 {% endblock %}

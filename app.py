@@ -1,18 +1,24 @@
 import logging
+import json
 import sqlite3
 import uuid
+
+from pathlib import Path
 
 from flask import Flask, current_app, redirect, render_template, url_for
 from flask_login import LoginManager, current_user, login_required, logout_user
 from flask_login.signals import user_logged_in
 from login import XUMMUser, login
+from xrpl.clients import JsonRpcClient
+from xrpl.wallet import Wallet
 
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(__name__)
     app.secret_key = str(uuid.uuid1())
-
+    ledger_url = "http://xls20-sandbox.rippletest.net:51234"
+    app.xrpl_client = JsonRpcClient(ledger_url)
     from nft import nft as nft_blueprint
     from trade import trade as trade_blueprint
     from wallet import wallet as wallet_blueprint
@@ -22,6 +28,10 @@ def create_app():
     app.register_blueprint(login, url_prefix="/login")
     app.register_blueprint(nft_blueprint, url_prefix="/nft")
 
+    app.creds = json.loads(Path("creds.json").read_text())
+    app.marketplace_wallet = Wallet(
+        seed=app.creds["secret"], sequence=app.creds["sequence"]
+    )
     return app
 
 
