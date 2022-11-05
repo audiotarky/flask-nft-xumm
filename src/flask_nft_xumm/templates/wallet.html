@@ -21,7 +21,7 @@
         <img src="https://xumm.app/avatar/{{n['issuer']}}_200.png" width="100" style="float: left; margin: 5px;" />
     </div>
     <div>
-        <p>Token <a href="{{ url_for('wallet.details', nft_id=n['id'])}}">{{n["id"]}}</a> was issued by <a
+        <p>Token <a href="{{ url_for('detail.index', nft_id=n['id'])}}">{{n["id"]}}</a> was issued by <a
                 href="/shop/{{n[" issuer"]}}">{{n["issuer"]}}</a> and points to <a href="{{n['uri']}}">{{n["uri"]}}</a>.
             It has a serial of {{n['serial']}}.</p><br />
         <p>The creator gets {{ n["fee"] / 1000}}% of any future sales.</p><br />

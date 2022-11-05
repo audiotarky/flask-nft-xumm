@@ -1,19 +1,13 @@
 import json
 
-from flask import (
-    Blueprint,
-    abort,
-    current_app,
-    redirect,
-    render_template,
-    request,
-    url_for,
-)
+from flask import (Blueprint, abort, current_app, redirect, render_template,
+                   request, url_for)
 from flask_login import UserMixin, current_user, login_user
 from xrplpers.xumm.transactions import get_xumm_transaction, xumm_login
-from utils import XUMMWalletProxy, is_safe_url
 
-login = Blueprint("xumm", __name__)
+from flask_nft_xumm.utils import XUMMWalletProxy, is_safe_url
+
+login = Blueprint("xumm", __name__, template_folder="templates")
 
 
 class XUMMUser(UserMixin):

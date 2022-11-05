@@ -40,7 +40,11 @@
                     <hr>
                     <li><a href="/shop">Shop</a></li>
                     <hr>
+                    {% if current_user.is_authenticated %}
                     <li><a href="/logout">Logout</a></li>
+                    {% else %}
+                    <li><a href="/login">Login</a></li>
+                    {% endif %}
                     <hr>
                 </ul>
                 <p>Ledger URL: {{ config.ledger_url }}</p>

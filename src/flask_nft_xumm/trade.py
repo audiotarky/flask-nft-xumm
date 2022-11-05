@@ -10,46 +10,27 @@ GET /sell/$NFT - put the NFT up for sale
 """
 import json
 import sqlite3
-
 from os import environ
 from pathlib import Path
 
-from flask import (
-    Blueprint,
-    Markup,
-    current_app,
-    flash,
-    jsonify,
-    redirect,
-    render_template,
-    request,
-    url_for,
-)
+from flask import (Blueprint, Markup, current_app, flash, jsonify, redirect,
+                   render_template, request, url_for)
 from flask_login import current_user, login_required
 from requests import HTTPError
-
 from xrpl.models.requests import AccountNFTs, NFTSellOffers
-from xrpl.models.transactions import (
-    NFTokenAcceptOffer,
-    NFTokenCreateOffer,
-    NFTokenCreateOfferFlag,
-)
-from xrpl.transaction import (
-    safe_sign_and_autofill_transaction,
-    send_reliable_submission,
-)
+from xrpl.models.transactions import (NFTokenAcceptOffer, NFTokenCreateOffer,
+                                      NFTokenCreateOfferFlag)
+from xrpl.transaction import (safe_sign_and_autofill_transaction,
+                              send_reliable_submission)
 from xrpl.utils import drops_to_xrp, hex_to_str, xrp_to_drops
-
 from xrplpers.nfts.entities import TokenID
-from xrplpers.xumm.transactions import get_xumm_transaction, submit_xumm_transaction
+from xrplpers.xumm.transactions import (get_xumm_transaction,
+                                        submit_xumm_transaction)
 
-from utils import (
-    cache_offer_to_db,
-    get_nft_list_for_account,
-    offer_id_from_transaction_hash,
-)
+from flask_nft_xumm.utils import (cache_offer_to_db, get_nft_list_for_account,
+                                  offer_id_from_transaction_hash)
 
-trade = Blueprint("trade", __name__)
+trade = Blueprint("trade", __name__, template_folder="templates")
 environ["XUMM_CREDS_PATH"] = "xumm_creds.json"
 
 

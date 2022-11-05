@@ -3,6 +3,7 @@ import sys
 from os import environ
 from urllib.parse import urljoin, urlparse
 
+import requests
 
 py_version = sys.version_info
 if py_version.major == 3 and py_version.minor >= 9:
@@ -16,9 +17,26 @@ from xrpl.models.requests import AccountNFTs
 from xrpl.transaction import get_transaction_from_hash
 from xrpl.utils import drops_to_xrp, hex_to_str, str_to_hex
 
-from decorators import time_cache
+from flask_nft_xumm.decorators import time_cache
 
 environ["XUMM_CREDS_PATH"] = "xumm_creds.json"
+
+
+@time_cache(300)
+def get_bithomp(nft_id):
+    fields = {x: "true" for x in "sellOffers buyOffers uri history".split()}
+
+    bithomp = requests.get(
+        f"https://bithomp.com/api/v2/nft/{nft_id}",
+        headers={"x-bithomp-token": current_app.creds["bithomp"]},
+        params=fields,
+    )
+
+    bithomp.raise_for_status()
+    data = bithomp.json()
+    data["uri_hex"] = data["uri"]
+    data["uri"] = hex_to_str(data["uri"])
+    return data
 
 
 @cache

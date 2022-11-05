@@ -3,24 +3,22 @@ Implements one endpoint:
 
 GET /wallet - lists all NFTs owned by the logged in user
 """
-from http import client
 import sqlite3
 from collections import defaultdict
+from http import client
 
+import requests
 from flask import Blueprint, current_app, jsonify, render_template, request
 from flask_login import current_user, login_required
-import requests
-
 from xrpl.models.requests import AccountNFTs, NFTSellOffers
 from xrpl.models.transactions import Memo, NFTokenCancelOffer, NFTokenMint
 from xrpl.utils import hex_to_str, str_to_hex
-from xrplpers.nfts.entities import TransferFee
+from xrplpers.nfts.entities import TokenID, TransferFee
 from xrplpers.xumm.transactions import submit_xumm_transaction
-from xrplpers.nfts.entities import TokenID
 
-from utils import get_nft_list_for_account
+from flask_nft_xumm.utils import get_bithomp, get_nft_list_for_account
 
-wallet = Blueprint("wallet", __name__)
+wallet = Blueprint("wallet", __name__, template_folder="templates")
 
 
 @wallet.route("/wallet")
@@ -53,25 +51,6 @@ def index():
             }
         )
     return render_template("wallet.html", nfts=nfts)
-
-
-@wallet.route("/wallet/details/<nft_id>")
-def details(nft_id):
-    n = TokenID.from_hex(nft_id)
-    nft = {"n": n, "details": []}
-    current_app.xrpl_client.open()
-    sales = current_app.xrpl_client.request(NFTSellOffers(nft_id=nft_id)).result
-    bitthomp = requests.get(
-        "https://bithomp.com/api/v2/nft/",
-        headers={"x-bithomp-token": current_app.creds["bitthomp"]},
-    )
-    for owner in [s["owner"] for s in sales["offers"]]:
-        result = get_nft_list_for_account(owner)
-        for r in result:
-            if r["NFTokenID"] == nft_id:
-                nft["uri"] = hex_to_str(r["URI"])
-                break
-    return render_template("details.html", nft=nft, sales=sales, bitthomp=bitthomp)
 
 
 @wallet.route("/wallet/cancel/<offer>", methods=["GET", "POST"])

@@ -1,7 +1,7 @@
 import time
 from functools import lru_cache, wraps
 
-from flask import request, current_app
+from flask import current_app, request
 from flask_login import current_user
 from xrpl.utils import str_to_hex
 

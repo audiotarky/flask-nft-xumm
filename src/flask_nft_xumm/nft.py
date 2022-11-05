@@ -1,9 +1,9 @@
 from flask import Blueprint, current_app
 from flask_login import current_user, login_required
 
-from decorators import nft_required
+from flask_nft_xumm.decorators import nft_required
 
-nft = Blueprint("nft", __name__)
+nft = Blueprint("nft", __name__, template_folder="templates")
 
 
 @nft.route("/<name>")
