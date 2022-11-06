@@ -1,7 +1,6 @@
 LICENSE
 README.md
 setup.py
-src/flask_nft_xumm/app.py
 src/flask_nft_xumm/db_setup.py
 src/flask_nft_xumm/decorators.py
 src/flask_nft_xumm/detail.py
