@@ -14,6 +14,10 @@ from xrpl.wallet import Wallet
 from flask_nft_xumm.login import XUMMUser, login
 
 
+def nft_factory(**kwargs):
+    return kwargs
+
+
 def create_app():
 
     statics = Path(sys.modules[XUMMUser.__module__].__file__)
@@ -24,6 +28,7 @@ def create_app():
     app.creds = json.loads(Path("creds.json").read_text())
     app.config.ledger_url = app.creds["ledger"]
     app.xrpl_client = WebsocketClient(app.config.ledger_url)
+    app.nft_factory = nft_factory
 
     from flask_nft_xumm.detail import detail as detail_blueprint
     from flask_nft_xumm.nft import nft as nft_blueprint

@@ -41,14 +41,15 @@ def index():
         # offers = client.request(NFTSellOffers(tokenid=n["NFTokenID"])).result
         current_app.logger.debug(n)
         nfts.append(
-            {
-                "issuer": n["Issuer"],
-                "id": n["NFTokenID"],
-                "fee": n["TransferFee"],
-                "uri": hex_to_str(n["URI"]),
-                "serial": n["nft_serial"],
-                "offers": offer_lookup.get(n["NFTokenID"], []),
-            }
+            current_app.nft_factory(
+                issuer=n["Issuer"],
+                id=n["NFTokenID"],
+                fee=n["TransferFee"],
+                uri=hex_to_str(n["URI"]),
+                serial=n["nft_serial"],
+                owner=current_user.wallet.address,
+                offer=offer_lookup.get(n["NFTokenID"], []),
+            )
         )
     return render_template("wallet.html", nfts=nfts)
 
