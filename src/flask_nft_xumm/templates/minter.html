@@ -3,28 +3,33 @@
 {% block title %}Mint an NFT{% endblock %}
 {% block content %}
 {% if qr %}
-<a href="{{url}}"><img src="{{qr}}"/></a>
+<a href="{{url}}"><img src="{{qr}}" /></a>
 <script>
-    webSocket = new WebSocket("{{ws}}");
-    webSocket.onmessage = function (event) {
-        data = JSON.parse(event.data);
-        console.log(data);
-        if (data.opened){
-            console.log('The signing request has been opened');
+    webSocket = new WebSocket( "{{ws}}" );
+    webSocket.onmessage = function ( event )
+    {
+        data = JSON.parse( event.data );
+        console.log( data );
+        if ( data.opened )
+        {
+            console.log( 'The signing request has been opened' );
             // TODO: hide the QR code & show a kindly message
         }
-        if (data.payload_uuidv4 || false){
-            console.log('Send signing event')
-            fetch("{{ url_for('wallet.mint') }}", {
+        if ( data.payload_uuidv4 || false )
+        {
+            console.log( 'Send signing event' )
+            console.log( event.data )
+            fetch( "{{ url_for('wallet.mint') }}", {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(event.data)
-            })
-            .then(response => {
-                webSocket.close();
-                console.log(response.json())
-                location.href = "/wallet"
-            })
+                headers: { 'Content-Type': 'application/json' },
+                body: event.data
+            } )
+                .then( response =>
+                {
+                    webSocket.close();
+                    console.log( response.json() )
+                    location.href = "/wallet"
+                } )
         }
     }
 </script>

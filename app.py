@@ -72,13 +72,14 @@ def wallet_cache_put(key, value):
 
 
 def wallet_cache_get(key):
-    current_app.logger.debug(f"wallet_cache_get: {key}")
+    logger = current_app.logger.getChild("wallet_cache")
+    logger.debug(f"{key}")
     con = sqlite3.connect("xumm.db")
     cur = con.cursor()
     sql = "select wallet_address from wallet_cache where user_token = ?"
     result = cur.execute(sql, [key]).fetchone()
     con.close()
-    current_app.logger.debug(f"wallet_cache_get result: {result}")
+    logger.debug(f"result: {result}")
     if not result:
         raise KeyError(f"{key} not found in cache")
     return result[0]
@@ -97,7 +98,7 @@ def when_user_logged_in(sender, user, **extra):
 def load_user(user_id):
     logging.debug(f"load_user: {user_id}")
     wallet = wallet_cache_get(user_id)
-    current_app.logger.debug(f"{user_id, wallet}")
+    logging.debug(f"{user_id, wallet}")
     return XUMMUser(user_id, account=wallet)
 
 
@@ -114,6 +115,34 @@ def logout():
     return redirect(url_for("index"))
 
 
+from flask_nft_xumm.wallet import mint_request, mint_signed
+
+# Wire up some simple signal handlers
+
+# In a real application you would want to record the request (has details
+# about the NFT & the initial XUMM response) and signing (the XUMM response
+# once signed) to a database or similar
+
+
+@mint_request.connect_via(app)
+def log_mint_request(*args, **kwargs):
+    logger = current_app.logger.getChild("mint_request")
+    logger.debug("mint_request")
+    logger.debug(args)
+    logger.debug(kwargs)
+
+
+@mint_signed.connect_via(app)
+def log_mint_signedt(*args, **kwargs):
+    logger = current_app.logger.getChild("mint_signed")
+    logger.debug(args)
+    logger.debug(kwargs)
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger("websockets.client").setLevel(logging.INFO)
+    logging.getLogger("asyncio").setLevel(logging.INFO)
+    logging.getLogger("urllib3.connectionpool").setLevel(logging.INFO)
+    print(app.url_map)
     app.run(port=5050, debug=True)  # nosec ssl_context="adhoc",
