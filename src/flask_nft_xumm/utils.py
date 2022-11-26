@@ -18,8 +18,11 @@ from xrpl.transaction import get_transaction_from_hash
 from xrpl.utils import drops_to_xrp, hex_to_str, str_to_hex
 
 from flask_nft_xumm.decorators import time_cache
+from werkzeug.local import LocalProxy
 
 environ["XUMM_CREDS_PATH"] = "xumm_creds.json"
+
+app_logger = LocalProxy(lambda: current_app.logger)
 
 
 @time_cache(300)

@@ -16,13 +16,9 @@ from xrpl.utils import hex_to_str, str_to_hex
 from xrplpers.nfts.entities import TokenID, TransferFee
 from xrplpers.xumm.transactions import submit_xumm_transaction
 
-from flask_nft_xumm.utils import get_bithomp, get_nft_list_for_account
+from flask_nft_xumm.utils import get_bithomp, get_nft_list_for_account, app_logger
 
 from blinker import Namespace
-from werkzeug.local import LocalProxy
-from flask import current_app
-
-app_logger = LocalProxy(lambda: current_app.logger)
 
 
 wallet = Blueprint("wallet", __name__, template_folder="templates")
