@@ -116,12 +116,15 @@ def logout():
 
 
 from flask_nft_xumm.wallet import mint_request, mint_signed
+from flask_nft_xumm.trade import sqlite_stock_update, sale_created
 
 # Wire up some simple signal handlers
 
 # In a real application you would want to record the request (has details
 # about the NFT & the initial XUMM response) and signing (the XUMM response
 # once signed) to a database or similar
+
+sale_created.connect(sqlite_stock_update, app)
 
 
 @mint_request.connect_via(app)

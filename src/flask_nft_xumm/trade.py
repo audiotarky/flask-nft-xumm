@@ -46,8 +46,14 @@ from flask_nft_xumm.utils import (
     offer_id_from_transaction_hash,
 )
 
+from blinker import Namespace
+
 trade = Blueprint("trade", __name__, template_folder="templates")
 environ["XUMM_CREDS_PATH"] = "xumm_creds.json"
+
+
+trade_signals = Namespace()
+sale_created = trade_signals.signal("sale_created")
 
 
 @trade.route("/shop/<issuer>")
@@ -215,6 +221,22 @@ def _flash_nft_sell_exists(nft, offers):
     flash(Markup(render_template("_nft_sale_exists.html", nft=nft, offers=offers)))
 
 
+def sqlite_stock_update(*args, **kwargs):
+    con = sqlite3.connect("xumm.db")
+    cur = con.cursor()
+    data = kwargs["payload"]
+    sell_offer = get_xumm_transaction(data["payload_uuidv4"])
+    txn = sell_offer["response"]["txid"]
+    offer_id = offer_id_from_transaction_hash(txn, current_app.xrpl_client)
+
+    cur.execute(
+        "update stock set signed = 1, sale_offer = ? where sale_offer = ?",
+        [offer_id, json.loads(request.json)["payload_uuidv4"]],
+    )
+    con.commit()
+    con.close()
+
+
 @trade.route("/sell", methods=["POST", "GET"])
 @trade.route("/sell/<nft>", methods=["POST", "GET"])
 @login_required
@@ -226,18 +248,7 @@ def sell(nft=None):
     current_app.xrpl_client.open()
     if request.method == "POST" and nft:
         # Store the Sell offer transaction id
-        con = sqlite3.connect("xumm.db")
-        cur = con.cursor()
-        sell_offer = get_xumm_transaction(json.loads(request.json)["payload_uuidv4"])
-        txn = sell_offer["response"]["txid"]
-        offer_id = offer_id_from_transaction_hash(txn, current_app.xrpl_client)
-
-        cur.execute(
-            "update stock set signed = 1, sale_offer = ? where sale_offer = ?",
-            [offer_id, json.loads(request.json)["payload_uuidv4"]],
-        )
-        con.commit()
-        con.close()
+        sale_created.send(current_app._get_current_object(), payload=request.get_json())
         return jsonify({"ok": True})
     elif request.method == "POST":
         # Create the sale offer, and have XUMM generate the QR to let the seller sign it
