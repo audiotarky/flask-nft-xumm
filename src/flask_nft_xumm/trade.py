@@ -217,7 +217,8 @@ def buy(nft=None):
 
 
 def _flash_nft_sell_exists(nft, offers):
-    offers = [x["index"] for x in offers["offers"]]
+    # TODO: update the stock DB with these offers
+    offers = [x.get("index") for x in offers["offers"] if x.get("index")]
     flash(Markup(render_template("_nft_sale_exists.html", nft=nft, offers=offers)))
 
 

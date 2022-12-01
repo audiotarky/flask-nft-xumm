@@ -27,16 +27,17 @@ app_logger = LocalProxy(lambda: current_app.logger)
 
 @time_cache(300)
 def get_bithomp(nft_id):
+    logger = app_logger.logger.getChild("bithomp")
     fields = {x: "true" for x in "sellOffers buyOffers uri history".split()}
-
     bithomp = requests.get(
-        f"https://bithomp.com/api/v2/nft/{nft_id}",
+        f"{current_app.creds['bithomp_url']}/api/v2/nft/{nft_id}",
         headers={"x-bithomp-token": current_app.creds["bithomp"]},
         params=fields,
     )
 
     bithomp.raise_for_status()
     data = bithomp.json()
+    logger.debug(data)
     data["uri_hex"] = data["uri"]
     data["uri"] = hex_to_str(data["uri"])
     return data
