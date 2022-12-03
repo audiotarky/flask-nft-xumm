@@ -41,13 +41,13 @@ def index():
     logger.debug(offer_lookup)
     con.close()
 
-    nfts = []
+    nfts = defaultdict(list)
     for n in current_user.wallet.nfts:
         # We could look up offers here, but it's slow - round trip to the
         # ledger for each NFT. If you need correctness, use the following:
         # offers = client.request(NFTSellOffers(tokenid=n["NFTokenID"])).result
         logger.debug(n)
-        nfts.append(
+        nfts[hex_to_str(n["URI"])].append(
             current_app.nft_factory(
                 issuer=n["Issuer"],
                 id=n["NFTokenID"],
