@@ -29,7 +29,7 @@ types-Deprecated==1.2.9
 typing_extensions==4.4.0
 urllib3==1.26.8
 websockets==10.1
-Werkzeug==2.0.2
+Werkzeug==2.2.3
 wrapt==1.14.1
 xrpl-py==1.7.0
 xrplpers==0.0.4
